@@ -1,0 +1,26 @@
+version: '4'
+
+services:
+  mysql:
+    image: mysql:9.0
+    container_name: product-service_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Welcome@1234
+      MYSQL_DATABASE: product_service
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  app:
+    build: .
+    container_name: product-service-app
+    depends_on:
+      - mysql
+    ports:
+      - "8082:8080"
+    
+volumes:
+  mysql_data:
