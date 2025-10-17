@@ -10,10 +10,10 @@ COPY target/inventoryservice-latest.jar inventoryservice.jar
 COPY wait-for-it.sh wait-for-it.sh
 
 # Make the script executable
-RUN chmod +x wait-for-it.sh
+#RUN chmod +x wait-for-it.sh
 
 # Run wait-for-it before launching the app
-ENTRYPOINT ["./wait-for-it.sh", "mysql:3306", "--", "java", "-jar", "inventoryservice.jar"]
+#ENTRYPOINT ["./wait-for-it.sh", "mysql:3306", "--", "java", "-jar", "inventoryservice.jar"]
 
 # Run the JAR
-#ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "inventoryservice.jar"]

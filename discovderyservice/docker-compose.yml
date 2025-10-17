@@ -1,8 +1,0 @@
-version: '4'
-
-services:
-  app:
-    build: .
-    container_name: discovery-service-app
-    ports:
-      - "8761:8761"

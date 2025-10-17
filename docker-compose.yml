@@ -1,0 +1,123 @@
+version: '3.9'
+
+services:
+
+  # -------------------
+  # Product Service DB
+  # -------------------
+  product-db:
+    image: mysql:9.0
+    container_name: product-db
+    environment:
+      MYSQL_ROOT_PASSWORD: Welcome@1234
+      MYSQL_DATABASE: product_service
+    volumes:
+      - product_mysql_data:/var/lib/mysql
+      - ./productservice/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3307:3306"
+    networks:
+      - backend
+
+  # Product Service App
+  product-service:
+    build: ./productservice
+    container_name: product-service
+    depends_on:
+      - product-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://product-db:3306/product_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Welcome@1234
+    ports:
+      - "8082:8082"
+    networks:
+      - backend
+
+  # -------------------
+  # Order Service DB
+  # -------------------
+  order-db:
+    image: mysql:9.0
+    container_name: order-db
+    environment:
+      MYSQL_ROOT_PASSWORD: Welcome@1234
+      MYSQL_DATABASE: order_service
+    volumes:
+      - order_mysql_data:/var/lib/mysql
+      - ./orderservice/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3308:3306"
+    networks:
+      - backend
+
+  # Order Service App
+  order-service:
+    build: ./orderservice
+    container_name: order-service
+    depends_on:
+      - order-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://order-db:3306/order_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Welcome@1234
+    ports:
+      - "8083:8083"
+    networks:
+      - backend
+
+  # -------------------
+  # Inventory Service DB
+  # -------------------
+  inventory-db:
+    image: mysql:9.0
+    container_name: inventory-db
+    environment:
+      MYSQL_ROOT_PASSWORD: Welcome@1234
+      MYSQL_DATABASE: inventory_service
+    volumes:
+      - inventory_mysql_data:/var/lib/mysql
+      - ./inventoryservice/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3309:3306"
+    networks:
+      - backend
+
+  # Inventory Service App
+  inventory-service:
+    build: ./inventoryservice
+    container_name: inventory-service
+    depends_on:
+      - inventory-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://inventory-db:3306/inventory_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Welcome@1234
+    ports:
+      - "8084:8084"
+    networks:
+      - backend
+
+  # -------------------
+  # API Gateway
+  # -------------------
+  api-gateway:
+    build: ./apigateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - product-service
+      - order-service
+      - inventory-service
+    networks:
+      - backend
+
+volumes:
+  product_mysql_data:
+  order_mysql_data:
+  inventory_mysql_data:
+
+networks:
+  backend:
+    driver: bridge
