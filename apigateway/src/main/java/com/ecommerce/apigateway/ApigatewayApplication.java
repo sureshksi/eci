@@ -23,16 +23,25 @@ public class ApigatewayApplication {
 		SpringApplication.run(ApigatewayApplication.class, args);
 	}
 
-	 @Bean
-	 RouteLocator routeLocator(RouteLocatorBuilder builder) {
-	  return builder
-	    .routes()
-	    .route(r -> r.path("/v3/products/api-docs").and().method(HttpMethod.GET).uri("http://product-service:8082"))
-	    .route(r -> r.path("/v3/orders/api-docs").and().method(HttpMethod.GET).uri("http://order-service:8083"))
-	    .route(r -> r.path("/v3/inventory/api-docs").and().method(HttpMethod.GET).uri("http://inventory-service:8084"))
-//	    .route(r -> r.path("/api/v1/products/**").and().method(HttpMethod.GET).uri("http://localhost:8082"))
-//	    .route(r -> r.path("/api/v1/orders/**").and().method(HttpMethod.GET).uri("http://localhost:8083"))
-//	    .route(r -> r.path("/api/v1/inventory/**").and().method(HttpMethod.GET).uri("http://localhost:8084"))
-	    .build();
-	 }
+//	@Bean
+//	public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
+//	    return builder.routes()
+//	        .route("product-service", r -> r.path("/api/v1/products/**").uri("http://product-service:8082"))
+//	        .route("order-service", r -> r.path("/api/v1/orders/**").uri("http://order-service:8083"))
+//	        .route("inventory-service", r -> r.path("/api/v1/inventory/**").uri("http://inventory-service:8084"))
+//	        .build();
+//	}
+
+//	 @Bean
+//	 RouteLocator routeLocator(RouteLocatorBuilder builder) {
+//	  return builder
+//	    .routes()
+//	    .route(r -> r.path("/v3/products/api-docs").and().method(HttpMethod.GET).uri("http://product-service:8082"))
+//	    .route(r -> r.path("/v3/orders/api-docs").and().method(HttpMethod.GET).uri("http://order-service:8083"))
+//	    .route(r -> r.path("/v3/inventory/api-docs").and().method(HttpMethod.GET).uri("http://inventory-service:8084"))
+////	    .route(r -> r.path("/api/v1/products/**").and().method(HttpMethod.GET).uri("http://localhost:8082"))
+////	    .route(r -> r.path("/api/v1/orders/**").and().method(HttpMethod.GET).uri("http://localhost:8083"))
+////	    .route(r -> r.path("/api/v1/inventory/**").and().method(HttpMethod.GET).uri("http://localhost:8084"))
+//	    .build();
+//	 }
 }

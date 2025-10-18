@@ -12,9 +12,11 @@ public class SecurityConfig {
     SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
             .csrf(ServerHttpSecurity.CsrfSpec::disable) // Disable CSRF for API use
-            .cors(cors -> {}) // Let Spring Cloud Gateway handle CORS
-            .authorizeExchange(exchange -> exchange
-                .anyExchange().permitAll() // Or secure routes as needed
+            //.cors(cors -> {}) // Let Spring Cloud Gateway handle CORS
+            .authorizeExchange(
+            		exchange -> exchange
+            		//.pathMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/**").permitAll()
+            		.anyExchange().permitAll() // Or secure routes as needed
             )
             .build();
     }
