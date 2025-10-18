@@ -1,5 +1,6 @@
 package com.ecommerce.inventory.repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,13 +19,17 @@ import com.ecommerce.inventory.entity.Inventory;
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Integer> {
 	
-	@Query("SELECT pc FROM Inventory pc WHERE pc.productId = :productId")
+	@Query("SELECT i FROM Inventory i WHERE i.productId = :productId")
 	Optional<Inventory> getProductById(@Param("productId") Integer productId);
 	
 	@Modifying
-	@Query("UPDATE Inventory pc SET pc.reserved = :reserved WHERE pc.productId = :productId")
-	void reservedByProductId(@Param("productId") Integer productId, @Param("reserved") Integer reserved);
+	@Query("UPDATE Inventory i SET i.updatedAt= :updatedAt, i.reserved = :reserved WHERE i.productId = :productId")
+	void reservedByProductId(@Param("productId") Integer productId, @Param("reserved") Integer reserved, @Param("updatedAt") LocalDateTime updatedAt);
 	
     boolean existsByProductIdAndOnHandGreaterThanEqual(Integer productId, Integer quantity);
     
+    @Modifying
+    @Query("UPDATE Inventory i SET i.reserved = 0 WHERE i.reserved = 1 AND i.updatedAt < :cutoff")
+    void releaseExpiredReservations(@Param("cutoff") LocalDateTime cutoff);
+
 }

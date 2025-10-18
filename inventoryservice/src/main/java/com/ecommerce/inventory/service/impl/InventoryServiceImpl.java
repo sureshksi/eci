@@ -1,8 +1,10 @@
 package com.ecommerce.inventory.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.ecommerce.inventory.entity.Inventory;
@@ -41,7 +43,7 @@ public class InventoryServiceImpl implements InventoryService {
 	public void reserveByProduct(int productId) throws InventoryException {
 		Inventory inventory = this.getProductById(productId);
 		if(inventory!=null && inventory.getReserved()==0) {
-			inventoryRepository.reservedByProductId(productId, 1);
+			inventoryRepository.reservedByProductId(productId, 1, LocalDateTime.now());
 			log.info("Product {} is reserved in Inventory successfully", productId);
 		}else {
 			log.info("Product already reserved in Inventory", productId);
@@ -55,15 +57,12 @@ public class InventoryServiceImpl implements InventoryService {
 	public void releaseProducct(int productId) throws InventoryException {
 		Inventory inventory = this.getProductById(productId);
 		if(inventory!=null && inventory.getReserved()==1) {
-			inventoryRepository.reservedByProductId(productId, 0);
+			inventoryRepository.reservedByProductId(productId, 0, LocalDateTime.now());
 			log.info("Product {} is released from reservation in Inventory successfully", productId);
 		}else {
 			log.info("Product already released in Inventory", productId);
 			//throw new InventoryException("Product already released");			
-		}
-		
-		inventoryRepository.reservedByProductId(productId, 0);
-		
+		}	
 	}
 
 	@Transactional
@@ -109,4 +108,13 @@ public class InventoryServiceImpl implements InventoryService {
         return inventoryRepository.existsByProductIdAndOnHandGreaterThanEqual(productId, quantity);
     }
 	
+    // Runs every 5 minutes
+    @Scheduled(fixedRate = 300000) // 300000ms = 5 minutes
+    @Transactional
+    public void releaseExpiredReservations() {
+    	log.info("Release expired reservations started");
+        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(15);
+        inventoryRepository.releaseExpiredReservations(cutoffTime);
+        log.info("Release expired reservations ended");
+    }
 }
