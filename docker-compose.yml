@@ -113,7 +113,47 @@ services:
     networks:
       - backend
 
+  # -------------------
+  # Promethesus
+  # -------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - backend  
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+    networks:
+      - backend 
+  # -------------------
+  # Grafana
+  # -------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - 3000:3000
+    depends_on:
+      - prometheus
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      # optional: pre-provision datasources/dashboards via provisioning/ folder
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - backend 
 volumes:
+  grafana-storage:
   product_mysql_data:
   order_mysql_data:
   inventory_mysql_data:

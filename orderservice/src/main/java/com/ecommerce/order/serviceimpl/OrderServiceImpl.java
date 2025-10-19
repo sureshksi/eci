@@ -14,17 +14,19 @@ import com.ecommerce.order.repository.OrderItemRepository;
 import com.ecommerce.order.repository.OrderRepository;
 import com.ecommerce.order.service.OrderService;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**Order Service  class
  * 
- * @author Suresh Ineti
+ * @author Suresh Injeti
  *
  */
 @Service
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 @Slf4j
 public class OrderServiceImpl implements OrderService {
 	
@@ -37,6 +39,35 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private OrderItemRepository orderItemRepository;
 
+	private final MeterRegistry meterRegistry;
+	
+	private Timer reserveInventoryTimer;
+    private Counter ordersPlaced;
+    private Counter orderFailed;
+    private Counter paymentsFailed;
+    private Counter stockouts;
+
+    public OrderServiceImpl(MeterRegistry registry) {
+        this.meterRegistry = registry;
+        this.ordersPlaced = Counter.builder("orders_placed_total")
+                                   .tag("service", "order-service")
+                                   .register(registry);
+        this.orderFailed = Counter.builder("orders_placed_failed")
+                .tag("service", "order-service")
+                .register(registry);
+        this.paymentsFailed = Counter.builder("payments_failed_total")
+                                     .tag("service", "order-service")
+                                     .register(registry);
+        this.stockouts = Counter.builder("stockouts_total")
+                                .tag("service", "order-service")
+                                .register(registry);
+
+        this.reserveInventoryTimer = Timer.builder("inventory_reserve_latency_ms")
+                                          .description("Latency for inventory reservation")
+                                          .tag("service", "order-service")
+                                          .publishPercentiles(0.5, 0.95)   // optional
+                                          .register(registry);
+    }
 	@Override
 	public List<Order> getAllOrders() throws OrderException {
 		List<Order> orderList = orderRepository.findAll();
@@ -68,24 +99,43 @@ public class OrderServiceImpl implements OrderService {
 			for(OrderItem item : order.getItems()) {
 				boolean inStock = inventoryClient.isInStock(item.getProductId(), item.getQuantity());
 		        if (!inStock) {
+		            stockouts.increment();
+		        	meterRegistry.counter("stockouts_total").increment();
 		            throw new OrderException("Product is not in stock. Please try again");
 		        }
 				itemIndex=itemIndex+1;
 				item.setOrderItemId(itemIndex);
 				item.setOrder_id(index);
 				totalPrice = totalPrice+(item.getUnitPrice()*item.getQuantity());
-				//Reserve product in inventory
-				inventoryClient.reserveProducct(item.getProductId());
+				
+				 //latency
+	            reserveInventoryTimer.record(() -> {
+	            	//Reserve product in inventory
+					inventoryClient.reserveProducct(item.getProductId());
+	            });				
 			}
-			orderRepository.save(order);
+			
+			//amount adding tax
+			totalPrice = totalPrice+(totalPrice *(5/100));
+			
+			//amount adding shipping
+			totalPrice = totalPrice+(totalPrice *(10/100));
 			
 			//payment
-			totalPrice = totalPrice+(totalPrice *(5/100));
+			
+			
+			orderRepository.save(order);
+			//metric
+			ordersPlaced.increment();
+			
 			//shipment
+			
 			log.info("Order {} is created successfully", order.getOrderId());
 		}catch(Exception e) {
 			log.error("Order creation failed");
 			this.releaseProduct(order);
+			orderFailed.increment();
+			
 			throw e;
 		}
 	}
@@ -130,4 +180,5 @@ public class OrderServiceImpl implements OrderService {
 			}
 	    }
 	}
+
 }

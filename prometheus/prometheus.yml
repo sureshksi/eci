@@ -1,0 +1,41 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+scrape_configs:
+#  - job_name: 'eci‑microservices'
+#    metrics_path: '/actuator/prometheus'
+#    static_configs:
+#      - targets:
+#          - 'api-gateway:8080'
+#          - 'order-service:8083'
+#          - 'product-service:8082'
+#          - 'inventory-service:8084'
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
+  - job_name: 'product_service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['product-service:8082']
+        labels:
+          application: 'Product Service Application'
+  - job_name: 'order_service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['order-service:8083']
+        labels:
+          application: 'Order Service Application'
+  - job_name: 'inventory_service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['inventory-service:8084']
+        labels:
+          application: 'Inventory Service Application'
+  - job_name: 'apigateway_service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['api-gateway:8080']
+        labels:
+          application: 'API-Gateway Service Application'
+    
