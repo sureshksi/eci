@@ -1,4 +1,4 @@
-package com.ecommerce.order.config;
+package com.ecommerce.order.client;
 
 import java.time.Duration;
 
@@ -11,16 +11,21 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
-import com.ecommerce.order.client.InventoryClient;
+/**Client beans are creates
+ * 
+ * @author Suresh Injeti
+ *
+ */
 @Configuration
 public class RestClientConfig {
-	@Value("${inventory.url}")
-    private String inventoryServiceUrl;
+	@Value("${app.rest.url}")
+    private String apiServiceUrl;
 
+	//Inventory client bean
     @Bean
     InventoryClient inventoryClient() {	
         RestClient restClient = RestClient.builder()
-                .baseUrl(inventoryServiceUrl)
+                .baseUrl(apiServiceUrl)
                 .requestFactory(getClientHttpRequestFactory())
                 .build();
         
@@ -30,6 +35,35 @@ public class RestClientConfig {
         return httpServiceProxyFactory.createClient(InventoryClient.class);
     }
 
+    //Notification client bean
+    @Bean
+    NotificationClient notificationClient() {	
+        RestClient restClient = RestClient.builder()
+                .baseUrl(apiServiceUrl)
+                .requestFactory(getClientHttpRequestFactory())
+                .build();
+        
+        RestClientAdapter restClientAdapter 		    = RestClientAdapter.create(restClient);
+        HttpServiceProxyFactory httpServiceProxyFactory = HttpServiceProxyFactory.builderFor(restClientAdapter).build();
+        
+        return httpServiceProxyFactory.createClient(NotificationClient.class);
+    }
+    
+    //Customer client bean
+    @Bean
+    CustomerClient customerClient() {	
+        RestClient restClient = RestClient.builder()
+                .baseUrl(apiServiceUrl)
+                .requestFactory(getClientHttpRequestFactory())
+                .build();
+        
+        RestClientAdapter restClientAdapter 		    = RestClientAdapter.create(restClient);
+        HttpServiceProxyFactory httpServiceProxyFactory = HttpServiceProxyFactory.builderFor(restClientAdapter).build();
+        
+        return httpServiceProxyFactory.createClient(CustomerClient.class);
+    }
+    
+    //Http client connect timeout
     private ClientHttpRequestFactory getClientHttpRequestFactory() {
         HttpComponentsClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsClientHttpRequestFactory();
         // Set connection timeout to 3 seconds

@@ -68,26 +68,26 @@ public class InventoryController {
 	}
 	
 	//Reserve product in inventory
-	@GetMapping("/product/reserve")
-	public ResponseEntity<String> reserveProducct(@Valid @RequestParam int productId, @RequestParam int quantity) {
+	@PutMapping("/product/reserve")
+	public ResponseEntity<Boolean> reserveProducct(@Valid @RequestParam int productId, @RequestParam int quantity) {
 		try {
-		 inventoryService.reserveByProduct(productId, quantity);
-		return new ResponseEntity<String>("Product reserved", HttpStatus.OK);
+			Boolean reserve = inventoryService.reserveByProduct(productId, quantity);
+		return new ResponseEntity<Boolean>(reserve, HttpStatus.OK);
 		}catch(InventoryException pe) {
 			log.error("Failed to reserve product");
-			return new ResponseEntity<String>(pe.getMessage(),  HttpStatus.NOT_FOUND);
+			return new ResponseEntity<Boolean>(false,  HttpStatus.NOT_FOUND);
 		}
 
 	}
 	//Release reserved product in inventory
-	@GetMapping("/product/release/{productId}")
-	public ResponseEntity<String> releaseProducct(@Valid @PathVariable Integer productId) {
+	@PutMapping("/product/release")
+	public ResponseEntity<Boolean> releaseProducct(@Valid @RequestParam int productId, @RequestParam boolean relaseType) {
 		try {
-		 inventoryService.releaseProducct(productId);
-		return new ResponseEntity<String>("Product release from reservation", HttpStatus.OK);
+		  Boolean release = inventoryService.releaseProducct(productId, relaseType);
+		return new ResponseEntity<Boolean>(release, HttpStatus.OK);
 		}catch(InventoryException pe) {
 			log.error("Failed to release product reservation");
-			return new ResponseEntity<String>(pe.getMessage(),  HttpStatus.NOT_FOUND);
+			return new ResponseEntity<Boolean>(false,  HttpStatus.NOT_FOUND);
 		}
 
 	}

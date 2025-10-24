@@ -4,12 +4,18 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
+import com.ecommerce.order.client.CustomerClient;
 import com.ecommerce.order.client.InventoryClient;
+import com.ecommerce.order.client.NotificationClient;
 import com.ecommerce.order.entity.Order;
 import com.ecommerce.order.entity.OrderItem;
 import com.ecommerce.order.exception.OrderException;
+import com.ecommerce.order.pojo.Customer;
+import com.ecommerce.order.pojo.Notification;
 import com.ecommerce.order.repository.OrderItemRepository;
 import com.ecommerce.order.repository.OrderRepository;
 import com.ecommerce.order.service.OrderService;
@@ -30,11 +36,19 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OrderServiceImpl implements OrderService {
 	
+	@Value("${app.rest.url}")
+	private String apiHost;
 	@Autowired
 	private  OrderRepository orderRepository;
 	
 	@Autowired
-	 private InventoryClient inventoryClient;
+	private InventoryClient inventoryClient;
+	
+	@Autowired
+	private NotificationClient notificationClient;
+	
+	@Autowired
+	private CustomerClient customerClient;
 	
 	@Autowired
 	private OrderItemRepository orderItemRepository;
@@ -47,6 +61,8 @@ public class OrderServiceImpl implements OrderService {
     private Counter paymentsFailed;
     private Counter stockouts;
 
+    RestClient restClient = RestClient.builder().baseUrl(apiHost) .build();
+	
     public OrderServiceImpl(MeterRegistry registry) {
         this.meterRegistry = registry;
         this.ordersPlaced = Counter.builder("orders_placed_total")
@@ -65,7 +81,7 @@ public class OrderServiceImpl implements OrderService {
         this.reserveInventoryTimer = Timer.builder("inventory_reserve_latency_ms")
                                           .description("Latency for inventory reservation")
                                           .tag("service", "order-service")
-                                          .publishPercentiles(0.5, 0.95)   // optional
+                                          .publishPercentiles(0.5, 0.95) 
                                           .register(registry);
     }
 	@Override
@@ -94,9 +110,10 @@ public class OrderServiceImpl implements OrderService {
 			int itemIndex = orderItemRepository.getOrderItemIncrement();
 			index = index+1;
 			order.setOrderId(index);
-			double totalPrice = 0.0;
+			double totalPrice = 0.00;
 			//(Σ unit_price × qty + 5% tax + shipping)
 			for(OrderItem item : order.getItems()) {
+				
 				boolean inStock = inventoryClient.isInStock(item.getProductId(), item.getQuantity());
 		        if (!inStock) {
 		            stockouts.increment();
@@ -111,7 +128,7 @@ public class OrderServiceImpl implements OrderService {
 				 //latency
 	            reserveInventoryTimer.record(() -> {
 	            	//Reserve product in inventory
-					inventoryClient.reserveProducct(item.getProductId());
+	            	inventoryClient.reserveProducct(item.getProductId(), item.getQuantity());
 	            });				
 			}
 			
@@ -121,19 +138,42 @@ public class OrderServiceImpl implements OrderService {
 			//amount adding shipping
 			totalPrice = totalPrice+(totalPrice *(10/100));
 			
+			//Rounding after decimal to two digit
+			totalPrice = Math.round(totalPrice * 100.0) / 100.0;
 			//payment
 			
-			
 			orderRepository.save(order);
+			this.releaseProduct(order, true);
 			//metric
 			ordersPlaced.increment();
 			
+			//Call API for Customer
+			Customer customer = null;
+			try {
+				customer = customerClient.getCustomerById(order.getCustomerId());
+			}catch(Exception e) {
+	 			log.error("Could not get Customer details");
+	 		}
+		 	if(customer != null && customer.getEmail() != null) {
+		 		try {
+					Notification notif = new Notification();
+					notif.setToEmail(customer.getEmail());
+					notif.setSubject("Order submitted successfully");
+					notif.setBody("Thank you for your order.");
+					// Call API for Send notification
+					notificationClient.sendNotification(notif);
+		 		}catch(Exception e) {
+		 			log.error("Notification send failed");
+		 		}
+		 	}else {
+		 		log.warn("Customer not avialable");
+		 	}
 			//shipment
 			
 			log.info("Order {} is created successfully", order.getOrderId());
 		}catch(Exception e) {
-			log.error("Order creation failed");
-			this.releaseProduct(order);
+			log.error("Order creation failed",e);
+			this.releaseProduct(order, false);
 			orderFailed.increment();
 			
 			throw e;
@@ -170,15 +210,127 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 	
-	private void releaseProduct(Order order) {
+	private void releaseProduct(Order order, boolean relaseType) {
 		//Release product in inventory
 		for(OrderItem item : order.getItems()) {
 			try {
-				inventoryClient.releaseProducct(item.getProductId());
+				inventoryClient.releaseProducct(item.getProductId(), relaseType);
 			}catch(Exception e) {
 				log.error("Product release failed");
 			}
 	    }
 	}
+	/*
+	@CircuitBreaker(name = "instock", fallbackMethod = "fallbackStockRCMethod")
+	@Retry(name="instock")
+    public Boolean isInStock(Integer productId, Integer quantity) {
+		Boolean isInStock = restClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/v1/inventory/product/instock")
+                        .queryParam("productId", productId)
+                        .queryParam("quantity", quantity)
+                        .build())
+                .retrieve()
+                .toEntity(Boolean.class)  // returns ResponseEntity<Boolean>
+                .getBody();
+		if(isInStock)
+			log.info("Product in stock");
+		else
+			log.info("Product not in stock");
+		return isInStock;
+    }
 
+	@CircuitBreaker(name = "reserve", fallbackMethod = "fallbackReserveCMethod")
+	@Retry(name="reserve")
+    public Boolean reserveProducct(Integer productId) {
+		Boolean reserveStatus = restClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/v1/inventory/product/reserve")
+                        .queryParam("productId", productId)
+                        .build())
+                .retrieve()
+                .toEntity(Boolean.class)
+                .getBody();
+		if(reserveStatus)
+			log.info("Product reserve successfully");
+		else
+			log.info("Product reserve failed");
+		return reserveStatus;
+    }
+	@CircuitBreaker(name = "release", fallbackMethod = "fallbackReserveCMethod")
+	@Retry(name="release")
+    public Boolean releaseProducct(Integer productId) {
+		Boolean releaseStatus =  restClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/v1/inventory/product/release")
+                        .queryParam("productId", productId)
+                        .build())
+                .retrieve()
+                .toEntity(Boolean.class)
+                .getBody();
+       
+		if(releaseStatus)
+			log.info("Product release successfully");
+		else
+			log.info("Product release failed");
+		
+		return releaseStatus;
+    }
+    @CircuitBreaker(name = "sendNotif", fallbackMethod = "notificationFallback")
+    @Retry(name="sendNotif")
+    public Boolean sendNotification(Notification user) {
+    	
+    	Boolean notifStatus = restClient.post()
+         .uri("/api/v1/notification")
+         .body(user)
+         .retrieve()
+         .body(Boolean.class);
+    	 
+		if(notifStatus)
+			log.info("Email notficiation sent successfully");
+		else
+			log.info("Email notficiation sent failed");
+		
+		return notifStatus;
+    }
+
+    @CircuitBreaker(name = "customer", fallbackMethod = "fallbackStockRCMethod")
+	@Retry(name="customer")
+    public Customer getCustomerById(Integer customerId) {
+    	Customer customer = restClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/v1/customerId/{customerId}")
+                        .build(Map.of("{customerId}", customerId))) // pass path variable
+                        //.queryParam("productId", productId)
+                        //.build())
+                .retrieve()
+                .toEntity(Customer.class) 
+                .getBody();
+    	if(customer != null) {
+    		log.info("Customer avaliable successfully");
+    	}else {
+    		log.info("Customer not avialable successfully");
+    	}
+    	return customer;
+    }
+    
+    // Fallbacks
+    boolean fallbackStockRCMethod(Integer productId, Integer quantity, Throwable t) {
+        log.info("Cannot get inventory for productId:{}"+ t.getMessage(),productId);
+        return false;
+    }
+    boolean fallbackReserveCMethod(Integer productId, Throwable t) {
+        log.info("Cannot reserve/release lock on productId {}"+ t.getMessage(),productId);
+        return false;
+    }
+   
+    public boolean notificationFallback(Notification notification, Throwable ex) {
+        log.info(" Send notificaiton '{}' fallback triggered: " + ex.getMessage(), notification.getToEmail());
+        return false;
+    }
+    public boolean customerFallback(Customer user, Throwable ex) {
+        log.info(" Get customer fallback triggered: " + ex.getMessage());
+        return false;
+    }
+    */
 }

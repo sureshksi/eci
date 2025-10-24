@@ -40,28 +40,35 @@ public class InventoryServiceImpl implements InventoryService {
 	
 	@Transactional
 	@Override
-	public void reserveByProduct(int productId, int quantity) throws InventoryException {
+	public Boolean reserveByProduct(int productId, int quantity) throws InventoryException {
 		Inventory inventory = this.getProductById(productId);
 		if(inventory!=null && inventory.getReserved()==0) {
 			inventoryRepository.reservedByProductId(productId, (inventory.getOnHand() - quantity), quantity, LocalDateTime.now());
 			log.info("Product {} is reserved in Inventory successfully", productId);
+			return true;
 		}else {
 			log.info("Product already reserved in Inventory", productId);
 			//throw new InventoryException("Product already reserved");
+			return false;
 		}
 		
 	}
 
 	@Transactional
 	@Override
-	public void releaseProducct(int productId) throws InventoryException {
+	public Boolean releaseProducct(int productId, boolean relaseType) throws InventoryException {
 		Inventory inventory = this.getProductById(productId);
 		if(inventory!=null && inventory.getReserved()!=0) {
-			inventoryRepository.reservedByProductId(productId, (inventory.getOnHand()+inventory.getReserved()), 0, LocalDateTime.now());
+			if(relaseType)//Success transaction decrease count
+				inventoryRepository.reservedByProductId(productId, inventory.getOnHand(), 0, LocalDateTime.now());
+			else//Failed transaction release reserved to onhold
+				inventoryRepository.reservedByProductId(productId, (inventory.getOnHand()+inventory.getReserved()), 0, LocalDateTime.now());
 			log.info("Product {} is released from reservation in Inventory successfully", productId);
+			return true;
 		}else {
 			log.info("Product already released in Inventory", productId);
-			//throw new InventoryException("Product already released");			
+			//throw new InventoryException("Product already released");	
+			return false;
 		}	
 	}
 

@@ -23,31 +23,32 @@ public interface InventoryClient {
 	@GetExchange("/api/v1/inventory/product/instock")
     @CircuitBreaker(name = "instock", fallbackMethod = "fallbackStockRCMethod")
     @Retry(name = "instock")
-    boolean isInStock(@RequestParam(PRODUCT_ID) Integer productId,
+    Boolean isInStock(@RequestParam(PRODUCT_ID) Integer productId,
                       @RequestParam(QUANTITY2) Integer quantity);
     
 	//@PutMapping("/api/v1/inventory/product/reserve/product")
 	
 	@PutExchange("/api/v1/inventory/product/reserve")
-    @CircuitBreaker(name = "reserve", fallbackMethod = "fallbackReserveCMethod")
+    @CircuitBreaker(name = "reserve", fallbackMethod = "fallbackRCMethod")
     @Retry(name = "reserve")
-    boolean reserveProducct(@RequestParam(PRODUCT_ID) Integer productId); ///reserve/product/{productId}
+    Boolean reserveProducct(@RequestParam(PRODUCT_ID) Integer productId,
+            @RequestParam(QUANTITY2) Integer quantity); ///reserve/product/{productId}
     
 	//@PutMapping("/api/v1/inventory/product/release/product")
 	@PutExchange("/api/v1/inventory/product/release")
-    @CircuitBreaker(name = "reserve", fallbackMethod = "fallbackReserveCMethod")
+    @CircuitBreaker(name = "reserve", fallbackMethod = "fallbackRCMethod")
     @Retry(name = "reserve")
-    boolean releaseProducct(@RequestParam(PRODUCT_ID) Integer productId);
+    Boolean releaseProducct(@RequestParam(PRODUCT_ID) Integer productId, @RequestParam boolean relaseType);
     
-    default boolean fallbackStockRCMethod(Integer productId, Integer quantity, Throwable t) {
-        log.info("Cannot get inventory for productId:{}",productId);
+    default boolean fallbackStockRCMethod( Throwable t) {
+        log.error("Cannot get availability ofproductId ",t);
         return false;
     }
-    
-    default boolean fallbackReserveCMethod(Integer productId, Throwable t) {
-        log.info("Cannot reserve/release lock on productId {}",productId);
+    default boolean fallbackRCMethod( Throwable t) {
+        log.error("Cannot get reserve/release for productId ", t);
         return false;
     }
+
 }
 
 
