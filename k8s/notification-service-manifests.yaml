@@ -1,4 +1,4 @@
-# API Gateway Deployment
+# Notification Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -45,7 +45,7 @@ spec:
           failureThreshold: 3
 
 ---
-# API Gateway Service
+# Notification Service
 apiVersion: v1
 kind: Service
 metadata:
