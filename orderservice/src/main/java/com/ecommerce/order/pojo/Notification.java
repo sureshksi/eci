@@ -1,7 +1,5 @@
-package com.ecommerce.notification.pojo;
+package com.ecommerce.order.pojo;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
@@ -9,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class Notification {
 	
-	@NotBlank(message = "Recipent email cannot be null or empty")
 	private String toEmail;
 	private String subject;
 	private String body; 

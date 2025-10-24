@@ -36,7 +36,7 @@ public class NotificaitonController {
 		try {
 			notificaitonService.sendEmail(notificaiton);
 		 log.info("Notificaiton createtion ends");
-		 return new ResponseEntity<String>("Email sent success", HttpStatus.CREATED);
+		 return new ResponseEntity<String>("Email sent success", HttpStatus.OK);
 
 		}catch(NotificationException pe) {
 			log.error("Failed to send email");
