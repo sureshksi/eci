@@ -99,6 +99,39 @@ services:
       - backend
 
   # -------------------
+  # Customer Service DB
+  # -------------------
+  customer-db:
+    image: mysql:9.0
+    container_name: customer-db
+    environment:
+      MYSQL_ROOT_PASSWORD: Welcome@1234
+      MYSQL_DATABASE: customer_service
+    volumes:
+      - customer_mysql_data:/var/lib/mysql
+      - ./customerservice/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3305:3306"
+    networks:
+      - backend
+
+  # Customer Service App
+  customer-service:
+    build: ./customerservice
+    container_name: customer-service
+    depends_on:
+      - customer-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://customer-db:3306/customer_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Welcome@1234
+    ports:
+      - "8081:8081"
+    networks:
+      - backend
+
+
+  # -------------------
   # Notification Service
   # -------------------
   notification-service:
@@ -121,6 +154,7 @@ services:
       - product-service
       - order-service
       - inventory-service
+      - customer-service
       - notification-service
     networks:
       - backend
@@ -169,6 +203,7 @@ volumes:
   product_mysql_data:
   order_mysql_data:
   inventory_mysql_data:
+  customer_mysql_data:
 
 networks:
   backend:

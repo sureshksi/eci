@@ -1,0 +1,200 @@
+# Customer Service Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: microservices
+
+---
+# ConfigMap for Customer Service
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: customer-service-config
+  namespace: microservices
+data:
+  SPRING_DATASOURCE_URL: "jdbc:mysql://customer-db-service:3306/customer_service"
+  SPRING_DATASOURCE_USERNAME: "root"
+
+---
+# Secret for Customer Service
+apiVersion: v1
+kind: Secret
+metadata:
+  name: customer-service-secret
+  namespace: microservices
+type: Opaque
+stringData:
+  MYSQL_ROOT_PASSWORD: "Welcome@1234"
+  SPRING_DATASOURCE_PASSWORD: "Welcome@1234"
+
+---
+# PVC for Customer Database
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: customer-mysql-pvc
+  namespace: microservices
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+
+---
+# Customer Database Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-db
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-db
+  template:
+    metadata:
+      labels:
+        app: customer-db
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:9.0
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: customer-service-secret
+              key: MYSQL_ROOT_PASSWORD
+        - name: MYSQL_DATABASE
+          value: "customer_service"
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+      volumes:
+      - name: mysql-data
+        persistentVolumeClaim:
+          claimName: customer-mysql-pvc
+      - name: init-script
+        configMap:
+          name: customer-db-init
+          optional: true
+
+---
+# Customer Database Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-db-service
+  namespace: microservices
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3306
+    targetPort: 3306
+  selector:
+    app: customer-db
+
+---
+# Customer Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-service
+  namespace: microservices
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: customer-service
+  template:
+    metadata:
+      labels:
+        app: customer-service
+    spec:
+      containers:
+      - name: customer-service
+        image: customer-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8081
+        envFrom:
+        - configMapRef:
+            name: customer-service-config
+        env:
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: customer-service-secret
+              key: SPRING_DATASOURCE_PASSWORD
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+---
+# Customer Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-service
+  namespace: microservices
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8081
+    targetPort: 8081
+  selector:
+    app: customer-service
