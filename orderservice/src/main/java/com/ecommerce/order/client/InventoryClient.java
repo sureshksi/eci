@@ -29,14 +29,14 @@ public interface InventoryClient {
 	//@PutMapping("/api/v1/inventory/product/reserve/product")
 	
 	@PutExchange("/api/v1/inventory/product/reserve")
-    @CircuitBreaker(name = "reserve", fallbackMethod = "fallbackRCMethod")
+    @CircuitBreaker(name = "reserve", fallbackMethod = "fallbackRsCMethod")
     @Retry(name = "reserve")
     Boolean reserveProducct(@RequestParam(PRODUCT_ID) Integer productId,
             @RequestParam(QUANTITY2) Integer quantity); ///reserve/product/{productId}
     
 	//@PutMapping("/api/v1/inventory/product/release/product")
 	@PutExchange("/api/v1/inventory/product/release")
-    @CircuitBreaker(name = "reserve", fallbackMethod = "fallbackRCMethod")
+    @CircuitBreaker(name = "reserve", fallbackMethod = "fallbackRlCMethod")
     @Retry(name = "reserve")
     Boolean releaseProducct(@RequestParam(PRODUCT_ID) Integer productId, @RequestParam boolean relaseType);
     
@@ -44,8 +44,12 @@ public interface InventoryClient {
         log.error("Cannot get availability ofproductId ",t);
         return false;
     }
-    default boolean fallbackRCMethod( Throwable t) {
-        log.error("Cannot get reserve/release for productId ", t);
+    default boolean fallbackRsCMethod(Integer productId, Integer quantity, Throwable t) {
+        log.error("Cannot get reserve for productId:{} ", productId, t);
+        return false;
+    }
+    default boolean fallbackRlCMethod(Integer productId, boolean releaseStatus, Throwable t) {
+        log.error("Cannot get release for productId:{} ", productId, t);
         return false;
     }
 
