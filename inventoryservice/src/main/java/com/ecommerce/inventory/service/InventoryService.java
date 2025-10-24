@@ -11,7 +11,7 @@ import com.ecommerce.inventory.exception.InventoryException;
 public interface InventoryService {
 	
 	public Inventory getProductById(int productId) throws InventoryException;
-	public void reserveByProduct(int productId) throws InventoryException;
+	public void reserveByProduct(int productId, int quantity) throws InventoryException;
 	public void releaseProducct(int productId) throws InventoryException;
 	public void updateInventory(Inventory inventory) throws InventoryException;
 	public void createInventory(Inventory inventory) throws InventoryException;

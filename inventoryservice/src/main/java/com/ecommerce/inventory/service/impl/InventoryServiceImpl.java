@@ -40,10 +40,10 @@ public class InventoryServiceImpl implements InventoryService {
 	
 	@Transactional
 	@Override
-	public void reserveByProduct(int productId) throws InventoryException {
+	public void reserveByProduct(int productId, int quantity) throws InventoryException {
 		Inventory inventory = this.getProductById(productId);
 		if(inventory!=null && inventory.getReserved()==0) {
-			inventoryRepository.reservedByProductId(productId, 1, LocalDateTime.now());
+			inventoryRepository.reservedByProductId(productId, (inventory.getOnHand() - quantity), quantity, LocalDateTime.now());
 			log.info("Product {} is reserved in Inventory successfully", productId);
 		}else {
 			log.info("Product already reserved in Inventory", productId);
@@ -56,8 +56,8 @@ public class InventoryServiceImpl implements InventoryService {
 	@Override
 	public void releaseProducct(int productId) throws InventoryException {
 		Inventory inventory = this.getProductById(productId);
-		if(inventory!=null && inventory.getReserved()==1) {
-			inventoryRepository.reservedByProductId(productId, 0, LocalDateTime.now());
+		if(inventory!=null && inventory.getReserved()!=0) {
+			inventoryRepository.reservedByProductId(productId, (inventory.getOnHand()+inventory.getReserved()), 0, LocalDateTime.now());
 			log.info("Product {} is released from reservation in Inventory successfully", productId);
 		}else {
 			log.info("Product already released in Inventory", productId);

@@ -68,10 +68,10 @@ public class InventoryController {
 	}
 	
 	//Reserve product in inventory
-	@GetMapping("/product/reserve/{productId}")
-	public ResponseEntity<String> reserveProducct(@Valid @PathVariable Integer productId) {
+	@GetMapping("/product/reserve")
+	public ResponseEntity<String> reserveProducct(@Valid @RequestParam int productId, @RequestParam int quantity) {
 		try {
-		 inventoryService.reserveByProduct(productId);
+		 inventoryService.reserveByProduct(productId, quantity);
 		return new ResponseEntity<String>("Product reserved", HttpStatus.OK);
 		}catch(InventoryException pe) {
 			log.error("Failed to reserve product");
