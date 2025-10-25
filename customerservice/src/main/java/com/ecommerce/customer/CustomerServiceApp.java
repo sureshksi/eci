@@ -12,7 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class CustomerServiceApp{
 
 	public static void main(String[] args) {
-		SpringApplication.run(CustomerserviceApplication.class, args);
+		SpringApplication.run(CustomerServiceApp.class, args);
 	}
 
 }

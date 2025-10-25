@@ -1,4 +1,4 @@
-package com.ecommerce.customer.config;
+package com.ecommerce.notification.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
