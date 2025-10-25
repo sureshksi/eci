@@ -8,10 +8,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableScheduling
 @EnableDiscoveryClient
-public class InventoryService {
+public class InventoryServiceApp {
 
 	public static void main(String[] args) {
-		SpringApplication.run(InventoryService.class, args);
+		SpringApplication.run(InventoryServiceApp.class, args);
 	}
 
 }

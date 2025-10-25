@@ -1,5 +1,7 @@
 package com.ecommerce.inventory.controller;
 
+import java.util.HashMap;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ecommerce.inventory.entity.Inventory;
 import com.ecommerce.inventory.exception.InventoryException;
 import com.ecommerce.inventory.service.InventoryService;
+import com.ecommerce.inventory.pojo.IdempotencyResponse;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +39,9 @@ public class InventoryController {
 	
 	@Autowired
 	InventoryService inventoryService;
+
+	//To submit multiple requests will same response
+	public static HashMap<String, IdempotencyResponse> idempotencyKeyMap = new HashMap<>();
 
 	//Update product details
 	@PutMapping
@@ -93,21 +100,36 @@ public class InventoryController {
 	}
 	//create inventory
 	@PostMapping
-	public ResponseEntity<Object> createInventoryProduct(@Valid @RequestBody Inventory inventory, BindingResult bindingResult) {
+	public ResponseEntity<Object> createInventoryProduct(@Valid @RequestBody Inventory inventory, @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey, BindingResult bindingResult) {
 		log.info("Inventory createtion started");
 		if (bindingResult.hasErrors()) {
 			return ResponseEntity.badRequest().body("Validation failed");
 		}
+		if (idempotencyKey == null || idempotencyKey.isEmpty()) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                .body("Missing Product Idempotency-Key header");
+	    }
+	    
+	    if (idempotencyKeyMap.containsKey(idempotencyKey)) {
+	    	IdempotencyResponse response = idempotencyKeyMap.get(idempotencyKey);
+	    	
+	        log.info("Returning cached Product response for Idempotency-Key: {}", idempotencyKey);
+	        return new ResponseEntity<>(response.getResponseBody(), response.getResponseStatus());
+	    }
+	    IdempotencyResponse idemtepotenyRes = new IdempotencyResponse();
 		try {
 			inventoryService.createInventory(inventory);
-		 log.info("Inventory createtion ends");
-		 return new ResponseEntity<Object>(inventory, HttpStatus.CREATED);
+			idemtepotenyRes.setResponseStatus(HttpStatus.CREATED);
+			idemtepotenyRes.setResponseBody(inventory.toString());
+			log.info("Inventory createtion ends");
 
 		}catch(InventoryException pe) {
+			idemtepotenyRes.setResponseStatus(HttpStatus.NOT_FOUND);
+			idemtepotenyRes.setResponseBody(pe.getMessage());
 			log.error("Failed to create Inventory");
-			return new ResponseEntity<Object>("Failed to inventory",  HttpStatus.NOT_FOUND);
 		}
-		
+		return new ResponseEntity<Object>(idemtepotenyRes.getResponseBody(), idemtepotenyRes.getResponseStatus());
+	
 	}
 	//Delete inventory
 	@DeleteMapping("/{id}")

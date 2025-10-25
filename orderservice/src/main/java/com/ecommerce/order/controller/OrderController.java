@@ -1,6 +1,6 @@
 package com.ecommerce.order.controller;
 
-
+import java.util.HashMap;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,11 +13,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.order.entity.Order;
 import com.ecommerce.order.exception.OrderException;
+import com.ecommerce.order.pojo.IdempotencyResponse;
 import com.ecommerce.order.service.OrderService;
 
 import jakarta.validation.Valid;
@@ -35,25 +37,43 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OrderController {
 	
-	@Autowired
-	OrderService orderService;
-	
+	//To submit multiple requests will same response
+	public static HashMap<String, IdempotencyResponse> idempotencyKeyMap = new HashMap<>();
 
+	
+	@Autowired
+	private OrderService orderService;
+	
+	//Create order with idempotency key support
 	@PostMapping
-	public ResponseEntity<Object> createOrder(@Valid @RequestBody Order order, BindingResult bindingResult) {
+	public ResponseEntity<Object> createOrder(@Valid @RequestBody Order order, 
+			@RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey, BindingResult bindingResult) {
 		log.info("Order createtion started");
 		if (bindingResult.hasErrors()) {
 			return ResponseEntity.badRequest().body("Validation failed");
 		}
+	    if (idempotencyKey == null || idempotencyKey.isEmpty()) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                .body("Missing Order Idempotency-Key header");
+	    }
+	    
+	    if (idempotencyKeyMap.containsKey(idempotencyKey)) {
+	    	IdempotencyResponse response = idempotencyKeyMap.get(idempotencyKey);
+	    	log.info("Returning cached Order response for Idempotency-Key: {}", idempotencyKey);
+	        return new ResponseEntity<>(response.getResponseBody(), response.getResponseStatus());
+	    }
+	    IdempotencyResponse idemtepotenyRes = new IdempotencyResponse();
 		try {
-		 orderService.createOrder(order);
-		 log.info("Order createtion ends");
-		 return new ResponseEntity<Object>(order, HttpStatus.CREATED);
-
+			orderService.createOrder(order);
+			idemtepotenyRes.setResponseStatus(HttpStatus.CREATED);
+			idemtepotenyRes.setResponseBody(order.toString());
+			log.info("Order createtion ends");
 		}catch(OrderException pe) {
+			idemtepotenyRes.setResponseStatus(HttpStatus.NOT_FOUND);
+			idemtepotenyRes.setResponseBody(pe.getMessage());
 			log.error("Failed to create Order");
-			return new ResponseEntity<Object>(pe.getMessage(),  HttpStatus.NOT_FOUND);
 		}
+		return new ResponseEntity<Object>(idemtepotenyRes.getResponseBody(),  idemtepotenyRes.getResponseStatus());
 		
 	}
 

@@ -11,9 +11,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 //@EnableFeignClients
 //@EnableDiscoveryClient
-public class OrderService {
+public class OrderServiceApp {
 
 	public static void main(String[] args) {
-		SpringApplication.run(OrderService.class, args);
+		SpringApplication.run(OrderServiceApp.class, args);
 	}
 }
