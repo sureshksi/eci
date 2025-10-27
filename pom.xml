@@ -15,6 +15,7 @@
     <module>inventoryservice</module>
     <module>customerservice</module>
     <module>notificationservice</module>
+    <module>shippingservice</module>
     <module>apigateway</module>
     
   </modules>
