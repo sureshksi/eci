@@ -63,6 +63,34 @@ public class RestClientConfig {
         return httpServiceProxyFactory.createClient(CustomerClient.class);
     }
     
+    //Shipment client
+    @Bean
+    ShippmentClient shipmentClient() {	
+        RestClient restClient = RestClient.builder()
+                .baseUrl(apiServiceUrl)
+                .requestFactory(getClientHttpRequestFactory())
+                .build();
+        
+        RestClientAdapter restClientAdapter 		    = RestClientAdapter.create(restClient);
+        HttpServiceProxyFactory httpServiceProxyFactory = HttpServiceProxyFactory.builderFor(restClientAdapter).build();
+        
+        return httpServiceProxyFactory.createClient(ShippmentClient.class);
+    }
+    
+    //Payment client
+    @Bean
+    PaymentClient paymentClient() {	
+        RestClient restClient = RestClient.builder()
+                .baseUrl(apiServiceUrl)
+                .requestFactory(getClientHttpRequestFactory())
+                .build();
+        
+        RestClientAdapter restClientAdapter 		    = RestClientAdapter.create(restClient);
+        HttpServiceProxyFactory httpServiceProxyFactory = HttpServiceProxyFactory.builderFor(restClientAdapter).build();
+        
+        return httpServiceProxyFactory.createClient(PaymentClient.class);
+    }
+    
     //Http client connect timeout
     private ClientHttpRequestFactory getClientHttpRequestFactory() {
         HttpComponentsClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsClientHttpRequestFactory();

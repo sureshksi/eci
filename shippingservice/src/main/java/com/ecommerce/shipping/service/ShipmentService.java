@@ -1,5 +1,7 @@
 package com.ecommerce.shipping.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -7,9 +9,6 @@ import com.ecommerce.shipping.model.Shipment;
 import com.ecommerce.shipping.repository.ShipmentRepository;
 
 import jakarta.transaction.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 /**Product Service Rest controller
  * 
@@ -51,5 +50,9 @@ public class ShipmentService {
     @Transactional
     public void updateShipmentStatus(Integer shipmentId, String status) {
         shipmentRepository.updateStatus(status, shipmentId);
+    }
+    
+    public Shipment getShipmentStausByTrackId(String trackId) {
+        return shipmentRepository.getTrackStatus(trackId);
     }
 }

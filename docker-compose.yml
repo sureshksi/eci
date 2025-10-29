@@ -130,6 +130,69 @@ services:
     networks:
       - backend
 
+  # -------------------
+  # Shipping Service DB
+  # -------------------
+  shipment-db:
+    image: mysql:9.0
+    container_name: shipment-db
+    environment:
+      MYSQL_ROOT_PASSWORD: Welcome@1234
+      MYSQL_DATABASE: shipment_service
+    volumes:
+      - shipment_mysql_data:/var/lib/mysql
+      - ./shippingservice/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3304:3306"
+    networks:
+      - backend
+
+  # Shipping Service App
+  shipment-service:
+    build: ./shippingservice
+    container_name: shipment-service
+    depends_on:
+      - shipment-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://shipment-db:3306/shipment_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Welcome@1234
+    ports:
+      - "8087:8087"
+    networks:
+      - backend
+
+  # -------------------
+  # Payment Service DB
+  # -------------------
+  payment-db:
+    image: mysql:9.0
+    container_name: payment-db
+    environment:
+      MYSQL_ROOT_PASSWORD: Welcome@1234
+      MYSQL_DATABASE: payment_service
+    volumes:
+      - payment_mysql_data:/var/lib/mysql
+      - ./paymentservice/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3303:3306"
+    networks:
+      - backend
+
+  # Payment Service App
+  payment-service:
+    build: ./paymentservice
+    container_name: payment-service
+    depends_on:
+      - payment-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://payment-db:3306/payment_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Welcome@1234
+    ports:
+      - "8086:8086"
+    networks:
+      - backend      
 
   # -------------------
   # Notification Service
@@ -156,6 +219,8 @@ services:
       - inventory-service
       - customer-service
       - notification-service
+      - shipment-service
+      - payment-service
     networks:
       - backend
 
@@ -204,6 +269,8 @@ volumes:
   order_mysql_data:
   inventory_mysql_data:
   customer_mysql_data:
+  shipment_mysql_data:
+  payment_mysql_data:
 
 networks:
   backend:

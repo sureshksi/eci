@@ -16,6 +16,7 @@
     <module>customerservice</module>
     <module>notificationservice</module>
     <module>shippingservice</module>
+    <module>paymentservice</module>
     <module>apigateway</module>
     
   </modules>

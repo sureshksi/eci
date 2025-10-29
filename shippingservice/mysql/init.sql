@@ -11,7 +11,7 @@ CREATE TABLE shipments (
   `shipped_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `delivered_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`shipment_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=202 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+) ENGINE=InnoDB AUTO_INCREMENT=202 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 INSERT INTO shipments(shipment_id,order_id,carrier,status,tracking_no,shipped_at,delivered_at) VALUES (1,128,'DHL','DELIVERED','TRK6188','2023-09-25 09:07:12','2023-03-07 16:56:37');
 INSERT INTO shipments(shipment_id,order_id,carrier,status,tracking_no,shipped_at,delivered_at) VALUES (2,131,'DHL','DELIVERED','TRK5876','2025-07-17 20:34:13','2025-02-10 21:59:30');

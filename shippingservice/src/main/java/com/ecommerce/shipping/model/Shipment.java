@@ -18,7 +18,7 @@ public class Shipment {
     @Column(name="shipment_id")
     private Integer shipmentId;
     @Column(name="order_id")
-    private Long orderId;
+    private Integer orderId;
     private String carrier;
     private String status;
     @Column(name="tracking_no")
@@ -32,8 +32,8 @@ public class Shipment {
     public Integer getShipmentId() { return shipmentId; }
     public void setShipmentId(Integer shipmentId) { this.shipmentId = shipmentId; }
 
-    public Long getOrderId() { return orderId; }
-    public void setOrderId(Long orderId) { this.orderId = orderId; }
+    public Integer getOrderId() { return orderId; }
+    public void setOrderId(Integer orderId) { this.orderId = orderId; }
 
     public String getCarrier() { return carrier; }
     public void setCarrier(String carrier) { this.carrier = carrier; }

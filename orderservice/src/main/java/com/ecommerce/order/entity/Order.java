@@ -48,7 +48,7 @@ public class Order {
 	@Column(name = "order_status")
 	private String orderStatus;
 	
-	@NotBlank(message = "Payment status cannot be null or empty")
+	//@NotBlank(message = "Payment status cannot be null or empty")
 	@Column(name = "payment_status")
 	private String paymentStatus;
 	
