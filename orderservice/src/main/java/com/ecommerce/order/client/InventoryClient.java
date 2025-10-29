@@ -33,7 +33,7 @@ public interface InventoryClient {
 	@PutExchange("/api/v1/inventory/product/reserve")
     @CircuitBreaker(name = "reserve", fallbackMethod = "fallbackRsCMethod")
     @Retry(name = "reserve")
-	ResponseEntity<?> reserveProducct(@RequestParam(PRODUCT_ID) Integer productId,
+	ResponseEntity<Boolean> reserveProducct(@RequestParam(PRODUCT_ID) Integer productId,
             @RequestParam(QUANTITY2) Integer quantity,
             @RequestHeader(value = "Idempotency-Key") String idempotencyKey); ///reserve/product/{productId}
     
@@ -41,7 +41,7 @@ public interface InventoryClient {
 	@PutExchange("/api/v1/inventory/product/release")
     @CircuitBreaker(name = "reserve", fallbackMethod = "fallbackRlCMethod")
     @Retry(name = "reserve")
-	ResponseEntity<?> releaseProducct(@RequestParam(PRODUCT_ID) Integer productId, @RequestParam boolean relaseType);
+	ResponseEntity<Boolean> releaseProducct(@RequestParam(PRODUCT_ID) Integer productId, @RequestParam boolean relaseType);
     
     default boolean fallbackStockRCMethod( Throwable t) {
         log.error("Cannot get availability ofproductId ",t);

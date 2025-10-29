@@ -75,7 +75,7 @@ public class PaymentController {
 				return new ResponseEntity<>("Create record failed",  HttpStatus.NOT_FOUND);
 	    	}
 	    	
-	    	return new ResponseEntity<Object>(idemtepotenyRes.getResponseBody(), idemtepotenyRes.getResponseStatus());
+	    	return new ResponseEntity<>(payment, idemtepotenyRes.getResponseStatus());
 	    }
 
 	    @PutMapping

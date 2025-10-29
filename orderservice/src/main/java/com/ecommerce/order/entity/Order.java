@@ -52,7 +52,7 @@ public class Order {
 	@Column(name = "payment_status")
 	private String paymentStatus;
 	
-	@NotNull(message = "Order total cannot be null")
+	//@NotNull(message = "Order total cannot be null")
 	@Column(name = "order_total")
 	private Double orderTotal;
 	

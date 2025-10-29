@@ -123,6 +123,7 @@ public class OrderServiceImpl implements OrderService {
 			index = index + 1;
 			order.setOrderId(index);
 			double totalPrice = 0.00;
+			String idempotencyKey = UUID.randomUUID().toString();
 			// (Σ unit_price × qty + 5% tax + shipping)
 			for (OrderItem item : order.getItems()) {
 
@@ -140,7 +141,7 @@ public class OrderServiceImpl implements OrderService {
 				// latency
 				reserveInventoryTimer.record(() -> {
 					// Reserve product in inventory
-					String idempotencyKey = UUID.randomUUID().toString();
+					//String idempotencyKey = UUID.randomUUID().toString();
 					inventoryClient.reserveProducct(item.getProductId(), item.getQuantity(), idempotencyKey);
 				});
 			}
@@ -162,7 +163,7 @@ public class OrderServiceImpl implements OrderService {
 			payment.setMethod("UPI");// Assume using UPI
 			payment.setReference(generatePaymentTracking());
 
-			ResponseEntity<?> paymentResponse = paymentClient.createpayment(payment);
+			ResponseEntity<Payment> paymentResponse = paymentClient.createpayment(payment, idempotencyKey);
 			if (paymentResponse.getStatusCode().is2xxSuccessful()) {
 				System.out.println(" Request successful!");
 				// response body
@@ -191,7 +192,7 @@ public class OrderServiceImpl implements OrderService {
 			shipment.setTrackingNo(generateTrackingNumber());
 
 			// shipmentClient.
-			ResponseEntity<?> shipmentResponse = shipmentClient.createShipment(shipment);
+			ResponseEntity<Shipment> shipmentResponse = shipmentClient.createShipment(shipment);
 			log.info("Order shipped successfully");
 			if (paymentResponse.getStatusCode().is2xxSuccessful()) {
 				System.out.println(" Request successful!");
@@ -200,7 +201,7 @@ public class OrderServiceImpl implements OrderService {
 				// Call API for Customer
 				Customer customer = null;
 				// try {
-				ResponseEntity<?> customerResponse = customerClient.getCustomerById(order.getCustomerId());
+				ResponseEntity<Customer> customerResponse = customerClient.getCustomerById(order.getCustomerId());
 //					}catch(Exception e) {
 //			 			log.error("Could not get Customer details");
 //			 		}

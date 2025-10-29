@@ -14,6 +14,6 @@ public interface ShippmentClient {
 	ResponseEntity<?> updateShippingStatus(@RequestParam Integer shippingId, @RequestParam String shippingStatus);
 	
 	@PostExchange("/api/v1/shipments")
-	ResponseEntity<?> createShipment(@RequestBody Shipment shipment);
+	ResponseEntity<Shipment> createShipment(@RequestBody Shipment shipment);
 
 }

@@ -14,7 +14,7 @@ import com.ecommerce.order.pojo.Customer;
 public interface CustomerClient {
 
 	@GetExchange("/api/v1/customers")
-	ResponseEntity<?> getCustomerById(@PathVariable Integer customerId);
+	ResponseEntity<Customer> getCustomerById(@PathVariable Integer customerId);
 	
     default boolean customerFallback(Customer user, Throwable ex) {
        // log.info(" Get customer fallback triggered: " + ex.getMessage());
