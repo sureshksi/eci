@@ -1,6 +1,6 @@
 package com.ecommerce.order.pojo;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -13,5 +13,5 @@ public class Customer {
 	private String name;
 	private String email;
 	private String phone;
-	private Timestamp created_at;
+	private LocalDateTime created_at;
 }

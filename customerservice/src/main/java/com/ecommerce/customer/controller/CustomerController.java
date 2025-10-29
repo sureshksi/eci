@@ -38,69 +38,69 @@ public class CustomerController {
 	CustomerService customerService;
 	
 		@PutMapping
-		public ResponseEntity<Object> updateCustomer(@Valid @RequestBody Customer customer, BindingResult bindingResult) {
+		public ResponseEntity<?> updateCustomer(@Valid @RequestBody Customer customer, BindingResult bindingResult) {
 			if (bindingResult.hasErrors()) {
 				return ResponseEntity.badRequest().body("Validation failed");
 			}
 			try {
 				customerService.updateCustomer(customer);
-				return new ResponseEntity<Object>(customer, HttpStatus.ACCEPTED);
+				return new ResponseEntity<>(customer, HttpStatus.ACCEPTED);
 			} catch (CustomerException pe) {
 				log.error("Failed to update Customer");
-				return new ResponseEntity<Object>(pe.getMessage(), HttpStatus.NOT_FOUND);
+				return new ResponseEntity<>(pe.getMessage(), HttpStatus.NOT_FOUND);
 			}
 		}
 		
 		
 		@GetMapping("/{customerId}")
-		public ResponseEntity<Object> getCustomerById(@Valid @PathVariable Integer customerId) {
+		public ResponseEntity<?> getCustomerById(@Valid @PathVariable Integer customerId) {
 			try {
 				Customer customer = customerService.getCustoemrById(customerId);
-			return new ResponseEntity<Object>(customer, HttpStatus.OK);
+			return new ResponseEntity<>(customer, HttpStatus.OK);
 
 			}catch(CustomerException pe) {
 				log.error("Failed to get Customer details");
-				return new ResponseEntity<Object>(pe.getMessage(),  HttpStatus.NOT_FOUND);
+				return new ResponseEntity<>(pe.getMessage(),  HttpStatus.NOT_FOUND);
 			}
 		}
 		
 		
 		@GetMapping
-		public ResponseEntity<Object> getAllCustomers() {
+		public ResponseEntity<?> getAllCustomers() {
 			try {
 			List<Customer> custoemrList =	customerService.getAllCustoemrs();
-			return new ResponseEntity<Object>(custoemrList, HttpStatus.OK);
+			return new ResponseEntity<>(custoemrList, HttpStatus.OK);
 			}catch(CustomerException pe) {
 				log.error("Failed to get all users");
-				return new ResponseEntity<Object>(pe.getMessage(),  HttpStatus.NOT_FOUND);
+				return new ResponseEntity<>(pe.getMessage(),  HttpStatus.NOT_FOUND);
 			}
 
 		}
 
 		//create Customer
 		@PostMapping
-		public ResponseEntity<Object> createCustomer(@Valid @RequestBody Customer customer, BindingResult bindingResult) {
+		public ResponseEntity<?> createCustomer(@Valid @RequestBody Customer customer, BindingResult bindingResult) {
 			if (bindingResult.hasErrors()) {
 				return ResponseEntity.badRequest().body("Validation failed");
 			}
 			try {
 				customerService.updateCustomer(customer);
-				return new ResponseEntity<Object>(customer, HttpStatus.ACCEPTED);
+				return new ResponseEntity<>(customer, HttpStatus.ACCEPTED);
 			} catch (CustomerException pe) {
-				return new ResponseEntity<Object>(pe.getMessage(), HttpStatus.NOT_FOUND);
+				return new ResponseEntity<>(pe.getMessage(), HttpStatus.NOT_FOUND);
 			}
 			
 		}
 		//Delete Customer
 		@DeleteMapping("/{id}")
-		public ResponseEntity<String> deleteCustomerById(@Valid @PathVariable("id") Integer custoemrId) {
+		public ResponseEntity<?> deleteCustomerById(@Valid @PathVariable("id") Integer custoemrId) {
 			try {
 				customerService.deleteCustomer(custoemrId);
-			return new ResponseEntity<String>("Deleted Successfully", HttpStatus.OK);
+			return new ResponseEntity<>("Deleted Successfully", HttpStatus.OK);
 
 			}catch(CustomerException pe) {
 				log.error("Failed to delete Customer");
-				return new ResponseEntity<String>(pe.getMessage(),  HttpStatus.NOT_FOUND);
+				return new ResponseEntity<>(pe.getMessage(),  HttpStatus.NOT_FOUND);
 			}
 		}
 }

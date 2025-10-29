@@ -1,6 +1,6 @@
 package com.ecommerce.customer.entity;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -10,8 +10,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**Entity for Customer service
@@ -19,8 +17,8 @@ import lombok.ToString;
  * @author Suresh Injeti
  *
  */
-@Data
-@RequiredArgsConstructor
+//@Data
+//@RequiredArgsConstructor
 @Entity
 @Table(name="customers")
 public class Customer {
@@ -34,7 +32,7 @@ public class Customer {
 	private String phone;
 	
 	@CreationTimestamp
-	private Timestamp created_at;
+	private LocalDateTime created_at;
 
 	@ToString.Include(name = "email")
     private String maskedEmail() {
@@ -49,5 +47,46 @@ public class Customer {
         if (phone == null || phone.length() < 4) return phone;
         return phone.substring(0, 2) + "****" + phone.substring(phone.length() - 2);
     }
+
+	public Integer getCutomerId() {
+		return cutomerId;
+	}
+
+	public void setCutomerId(Integer cutomerId) {
+		this.cutomerId = cutomerId;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+
+	public LocalDateTime getCreated_at() {
+		return created_at;
+	}
+
+	public void setCreated_at(LocalDateTime created_at) {
+		this.created_at = created_at;
+	}
+    
 	
 }

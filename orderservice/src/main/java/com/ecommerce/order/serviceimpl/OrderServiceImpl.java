@@ -154,6 +154,8 @@ public class OrderServiceImpl implements OrderService {
 
 			// Rounding after decimal to two digit
 			totalPrice = Math.round(totalPrice * 100.0) / 100.0;
+			
+			order.setOrderTotal(totalPrice);
 
 			// payment
 			payment.setAmount(totalPrice);
@@ -200,12 +202,13 @@ public class OrderServiceImpl implements OrderService {
 			
 				// Call API for Customer
 				Customer customer = null;
-				// try {
-				ResponseEntity<Customer> customerResponse = customerClient.getCustomerById(order.getCustomerId());
-//					}catch(Exception e) {
-//			 			log.error("Could not get Customer details");
-//			 		}
-				if (paymentResponse.getStatusCode().is2xxSuccessful()) {
+				ResponseEntity<Customer> customerResponse = null;
+				 try {
+					 customerResponse = customerClient.getCustomerById(order.getCustomerId());
+				}catch(Exception e) {
+			 		log.error("Could not get Customer details");
+			 	}
+				if (customerResponse!=null && paymentResponse.getStatusCode().is2xxSuccessful()) {
 					System.out.println(" Request successful!");
 					customer = (Customer) customerResponse.getBody();
 				} else {
