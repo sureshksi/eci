@@ -197,31 +197,25 @@ public class OrderServiceImpl implements OrderService {
 			ResponseEntity<Shipment> shipmentResponse = shipmentClient.createShipment(shipment);
 			log.info("Order shipped successfully");
 			if (paymentResponse.getStatusCode().is2xxSuccessful()) {
-				System.out.println(" Request successful!");
 				shipment = (Shipment) shipmentResponse.getBody();
 			
 				// Call API for Customer
 				Customer customer = null;
-				ResponseEntity<Customer> customerResponse = null;
-				 try {
-					 customerResponse = customerClient.getCustomerById(order.getCustomerId());
-				}catch(Exception e) {
-			 		log.error("Could not get Customer details");
-			 	}
-				if (customerResponse!=null && paymentResponse.getStatusCode().is2xxSuccessful()) {
-					System.out.println(" Request successful!");
+				 //try {
+				 ResponseEntity<Customer> customerResponse = customerClient.getCustomerById(order.getCustomerId());
+//				}catch(Exception e) {
+//			 		log.error("Could not get Customer details");
+//			 	}
+				if (customerResponse.getStatusCode().is2xxSuccessful()) {
 					customer = (Customer) customerResponse.getBody();
-				} else {
-					order.setPaymentStatus("FAILED");
-				}
-
+				} 
+				//Customer is available send email notification
 				if (customer != null && customer.getEmail() != null) {
 					try {
 						Notification notif = new Notification();
 						notif.setToEmail(customer.getEmail());
 						notif.setSubject("Order submitted successfully");
-						notif.setBody("Thank you for your order. You will track shipment using Tracking:"
-								+ shipment.getTrackingNo());
+						notif.setBody("Thank you for your order. You will track shipment using Tracking:"+ shipment.getTrackingNo());
 						// Call API for Send notification
 						notificationClient.sendNotification(notif);
 					} catch (Exception e) {
@@ -235,9 +229,6 @@ public class OrderServiceImpl implements OrderService {
 			log.info("Order {} is created successfully", order.getOrderId());
 		} catch (Exception e) {
 			log.error("Order creation failed", e);
-			// payment failure/cancel
-			// Shipment cancel
-			// release inventory
 			this.releaseProduct(order, false);
 
 			orderFailed.increment();
