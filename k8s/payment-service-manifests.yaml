@@ -1,0 +1,193 @@
+# ConfigMap for Payment Service
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payment-service-config
+  namespace: microservices
+data:
+  SPRING_DATASOURCE_URL: "jdbc:mysql://payment-db-service:3306/payment_service"
+  SPRING_DATASOURCE_USERNAME: "root"
+
+---
+# Secret for Payment Service
+apiVersion: v1
+kind: Secret
+metadata:
+  name: payment-service-secret
+  namespace: microservices
+type: Opaque
+stringData:
+  MYSQL_ROOT_PASSWORD: "Welcome@1234"
+  SPRING_DATASOURCE_PASSWORD: "Welcome@1234"
+
+---
+# PVC for Payment Database
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: payment-mysql-pvc
+  namespace: microservices
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+
+---
+# Payment Database Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-db
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-db
+  template:
+    metadata:
+      labels:
+        app: payment-db
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:9.0
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: payment-service-secret
+              key: MYSQL_ROOT_PASSWORD
+        - name: MYSQL_DATABASE
+          value: "payment_service"
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+      volumes:
+      - name: mysql-data
+        persistentVolumeClaim:
+          claimName: payment-mysql-pvc
+      - name: init-script
+        configMap:
+          name: payment-db-init
+          optional: true
+
+---
+# Payment Database Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-db-service
+  namespace: microservices
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3306
+    targetPort: 3306
+  selector:
+    app: payment-db
+
+---
+# Payment Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: microservices
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+      - name: payment-service
+        image: payment-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8086
+        envFrom:
+        - configMapRef:
+            name: payment-service-config
+        env:
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: payment-service-secret
+              key: SPRING_DATASOURCE_PASSWORD
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8086
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8086
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+---
+# Payment Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: microservices
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8086
+    targetPort: 8086
+  selector:
+    app: payment-service
