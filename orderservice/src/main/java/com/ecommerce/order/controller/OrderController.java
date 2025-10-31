@@ -73,10 +73,43 @@ public class OrderController {
 			idemtepotenyRes.setResponseBody(pe.getMessage());
 			log.error("Failed to create Order");
 		}
+		idempotencyKeyMap.put(idempotencyKey, idemtepotenyRes);
 		return new ResponseEntity<>(idemtepotenyRes.getResponseBody(),  idemtepotenyRes.getResponseStatus());
 		
 	}
 
+	//Cancel order with idempotency key support
+		@PutMapping("/cancel")
+		public ResponseEntity<?> cancelOrder(@RequestBody Order order, 
+				@RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+			log.info("Order cancel started");
+			
+		    if (idempotencyKey == null || idempotencyKey.isEmpty()) {
+		        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+		                .body("Missing Order Idempotency-Key header");
+		    }
+		    
+		    if (idempotencyKeyMap.containsKey(idempotencyKey)) {
+		    	IdempotencyResponse response = idempotencyKeyMap.get(idempotencyKey);
+		    	log.info("Returning cached Order response for Idempotency-Key: {}", idempotencyKey);
+		        return new ResponseEntity<>(response.getResponseBody(), response.getResponseStatus());
+		    }
+		    IdempotencyResponse idemtepotenyRes = new IdempotencyResponse();
+			try {
+				orderService.cancelOrder(order);
+				idemtepotenyRes.setResponseStatus(HttpStatus.CREATED);
+				idemtepotenyRes.setResponseBody(order.toString());
+				log.info("Order cacelled ends");
+			}catch(OrderException pe) {
+				idemtepotenyRes.setResponseStatus(HttpStatus.NOT_FOUND);
+				idemtepotenyRes.setResponseBody(pe.getMessage());
+				log.error("Failed to cancel Order");
+			}
+			idempotencyKeyMap.put(idempotencyKey, idemtepotenyRes);
+			return new ResponseEntity<>(idemtepotenyRes.getResponseBody(),  idemtepotenyRes.getResponseStatus());
+			
+		}
+		
 	// This method gets the order details by orderid
 	@GetMapping("/{id}")
 	public ResponseEntity<?> getOrderById(@Valid @PathVariable("id") Integer orderId) {

@@ -73,6 +73,7 @@ public class ProductController {
 			idemtepotenyRes.setResponseBody(pe.getMessage());
 			log.error("Failed to create product");
 		}
+		idempotencyKeyMap.put(idempotencyKey, idemtepotenyRes);
 		return new ResponseEntity<Object>(idemtepotenyRes.getResponseBody(), idemtepotenyRes.getResponseStatus());
 
 	}

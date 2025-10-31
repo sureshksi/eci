@@ -1,5 +1,7 @@
 package com.ecommerce.payment.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -16,5 +18,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     void updateStatus(@Param("status") String status, @Param("paymentId") Integer paymentId);
 
     @Query("SELECT p FROM Payment p WHERE p.reference= :trackingId")
-    Payment getTrackStatus(@Param("trackingId") String trackingId);
+    Optional<Payment> getTrackStatus(@Param("trackingId") String trackingId);
+    
+    @Query("SELECT p FROM Payment p WHERE p.orderId= :orderId")
+    Optional<Payment> getByOrderId(@Param("orderId") Integer orderId);
 }

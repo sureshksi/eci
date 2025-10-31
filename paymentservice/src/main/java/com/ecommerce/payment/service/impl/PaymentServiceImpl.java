@@ -84,7 +84,21 @@ public class PaymentServiceImpl implements PaymentService {
 	@Override
     public Payment getPaymentStausByTrackId(String trackId) {
 		log.info("TrakingId::"+trackId);
-        return paymentRepository.getTrackStatus(trackId);
+		Optional<Payment> paymentOpt = paymentRepository.getTrackStatus(trackId);
+		if(paymentOpt.isEmpty())
+			return null;
+		else
+			return paymentOpt.get();
     }
+
+	@Override
+	public Payment getPaymentByOrderId(Integer orderId) {
+		log.info("OrderId::"+orderId);
+		Optional<Payment> paymentOpt = paymentRepository.getByOrderId(orderId);
+		if(paymentOpt.isEmpty())
+			return null;
+		else
+			return paymentOpt.get();
+		}
 	
 }

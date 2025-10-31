@@ -60,6 +60,11 @@ public class ShipmentController {
     	shipmentService.updateShipmentStatus(shippingId, shippingStatus);
     	return ResponseEntity.ok("Shipping status updated successfully");
     }
+    @PatchMapping("/updateStatus/order")
+    public ResponseEntity<?> updateShippingStatusByOrder(@RequestParam Integer orderId, @RequestParam String shippingStatus) {
+    	shipmentService.updateShipmentStatusByOrder(orderId, shippingStatus);
+    	return ResponseEntity.ok("Shipping status updated with order successfully");
+    }
     
     @GetMapping("/track/{trackingId}")
     public ResponseEntity<?> getShippingStatusByTrackId(@PathVariable String trackingId) {

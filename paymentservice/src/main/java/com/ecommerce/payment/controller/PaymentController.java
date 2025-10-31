@@ -20,8 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.payment.entity.Payment;
 import com.ecommerce.payment.exception.PaymentException;
-import com.ecommerce.payment.service.PaymentService;
 import com.ecommerce.payment.pojo.IdempotencyResponse;
+import com.ecommerce.payment.service.PaymentService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +48,13 @@ public class PaymentController {
 	    	return ResponseEntity.ok(payment);
 	    }
 
-	    @PostMapping
+	    @GetMapping("/order/{orderId}")
+	    public ResponseEntity<?> getByOrderId(@PathVariable Integer orderId) {
+	    	Payment payment = paymentService.getPaymentByOrderId(orderId);
+	    	return ResponseEntity.ok(payment);
+	    }
+	    
+	    @PostMapping("/charge")
 	    public ResponseEntity<?> create(@RequestBody Payment payment, @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
 	    	
 	    	if (idempotencyKey == null || idempotencyKey.isEmpty()) {
@@ -65,6 +71,13 @@ public class PaymentController {
 		    IdempotencyResponse idemtepotenyRes = new IdempotencyResponse();
 		    
 	    	try {
+	    		//UPI and COD do not add any charge
+	    		if(payment.getMethod().equalsIgnoreCase("CARD")) {
+	    			double toalAmount = payment.getAmount()+(payment.getAmount()*(2.5/100));
+		    		//Making rounding to two digits after decimal	
+	    			 toalAmount =	Math.round(toalAmount * 100.0) / 100.0;
+	    			 payment.setAmount(toalAmount);
+	    		}
 		    	paymentService.createPayment(payment);
 		    	idemtepotenyRes.setResponseStatus(HttpStatus.CREATED);
 				idemtepotenyRes.setResponseBody(payment.toString());
@@ -74,7 +87,37 @@ public class PaymentController {
 				log.error("Failed to create payment");
 				return new ResponseEntity<>("Create record failed",  HttpStatus.NOT_FOUND);
 	    	}
-	    	
+	    	idempotencyKeyMap.put(idempotencyKey, idemtepotenyRes);
+	    	return new ResponseEntity<>(payment, idemtepotenyRes.getResponseStatus());
+	    }
+	    
+	    @PutMapping("/{orderId}/refund")
+	    public ResponseEntity<?> refund(@PathVariable Integer orderId, @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+	        IdempotencyResponse idemtepotenyRes = new IdempotencyResponse();
+	        Payment payment =  new Payment();
+	    	try {
+		    	if (idempotencyKey == null || idempotencyKey.isEmpty()) {
+			        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+			                .body("Missing Payment Idempotency-Key header");
+			    }
+			    
+			    if (idempotencyKeyMap.containsKey(idempotencyKey)) {
+			    	IdempotencyResponse response = idempotencyKeyMap.get(idempotencyKey);
+			    	
+			        log.info("Returning cached Payment response for Idempotency-Key: {}", idempotencyKey);
+			        return new ResponseEntity<>(response.getResponseBody(), response.getResponseStatus());
+			    }
+			payment =  paymentService.getPaymentByOrderId(orderId);
+			payment.setStatus("REFUND");
+			paymentService.updatePayment(payment);
+	    	idemtepotenyRes.setResponseStatus(HttpStatus.OK);
+			idemtepotenyRes.setResponseBody(payment.toString());
+		}catch(Exception e) {
+			idemtepotenyRes.setResponseStatus(HttpStatus.NOT_FOUND);
+			idemtepotenyRes.setResponseBody(e.getMessage());
+	    		return new ResponseEntity<>("Refund record failed",  HttpStatus.NOT_FOUND);
+	    	}
+	    	idempotencyKeyMap.put(idempotencyKey, idemtepotenyRes);
 	    	return new ResponseEntity<>(payment, idemtepotenyRes.getResponseStatus());
 	    }
 

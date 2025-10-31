@@ -23,4 +23,9 @@ public interface ShipmentRepository extends JpaRepository<Shipment, Integer> {
 
     @Query("SELECT s FROM Shipment s WHERE s.trackingNo= :trackingId")
     Shipment getTrackStatus(@Param("trackingId") String trackingId);
+    
+    @Modifying
+    @Query("UPDATE Shipment i SET i.status = :status, i.deliveredAt = CURRENT_TIMESTAMP  WHERE i.orderId= :orderId")
+    void updateStatusByOrder(@Param("status") String status, @Param("orderId") Integer orderId);
+
 }

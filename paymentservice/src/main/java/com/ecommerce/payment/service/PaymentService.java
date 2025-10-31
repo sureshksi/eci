@@ -14,5 +14,5 @@ public interface PaymentService {
 	public Payment getPaymentById(Integer paymentId);
 	public void updatePaymentStatus(Integer paymentId, String paymentStatus) throws PaymentException;
 	public Payment getPaymentStausByTrackId(String trackId);
-
+	public Payment getPaymentByOrderId(Integer orderId);
 }

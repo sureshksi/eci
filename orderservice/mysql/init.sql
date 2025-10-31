@@ -8,6 +8,7 @@ CREATE TABLE orders (
   `order_status` varchar(16) DEFAULT NULL,
   `payment_status` varchar(16) DEFAULT NULL,
   `order_total` double NOT NULL,
+  `isdeleted` tinyint DEFAULT '0',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`order_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=417 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -420,6 +421,7 @@ CREATE TABLE order_items (
   `sku` varchar(8) NOT NULL,
   `quantity` int NOT NULL,
   `unit_price` double NOT NULL,
+  `isdeleted` tinyint DEFAULT '0',
   PRIMARY KEY (`order_item_id`),
   KEY `order_id_idx` (`order_id`),
   CONSTRAINT `order_id` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE ON UPDATE CASCADE

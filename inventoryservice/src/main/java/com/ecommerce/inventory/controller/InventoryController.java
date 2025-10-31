@@ -140,6 +140,7 @@ public class InventoryController {
 			idemtepotenyRes.setResponseBody(pe.getMessage());
 			log.error("Failed to create Inventory");
 		}
+		idempotencyKeyMap.put(idempotencyKey, idemtepotenyRes);
 		return new ResponseEntity<>(idemtepotenyRes.getResponseBody(), idemtepotenyRes.getResponseStatus());
 	
 	}

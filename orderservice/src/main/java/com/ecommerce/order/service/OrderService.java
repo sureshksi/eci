@@ -17,5 +17,6 @@ public interface OrderService {
 	public void createOrder(Order order) throws OrderException;
 	public void updateOrder(Order order) throws OrderException;
 	public void deleteOrder(int productId) throws OrderException;
+	public void cancelOrder(Order order) throws OrderException;
 
 }

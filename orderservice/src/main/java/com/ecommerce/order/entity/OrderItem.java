@@ -45,4 +45,5 @@ public class OrderItem {
 	@Column(name = "unit_price")
 	private Double unitPrice;
 	
+	private Boolean isdeleted;
 }

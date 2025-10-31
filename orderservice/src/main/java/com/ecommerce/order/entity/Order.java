@@ -63,4 +63,7 @@ public class Order {
 	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "order_id") 
     private List<OrderItem> items = new ArrayList<>();
+	
+	private Boolean isdeleted;
+	
 }

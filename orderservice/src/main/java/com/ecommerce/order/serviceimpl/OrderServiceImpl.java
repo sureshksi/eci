@@ -170,12 +170,15 @@ public class OrderServiceImpl implements OrderService {
 				System.out.println(" Request successful!");
 				// response body
 				payment = (Payment) paymentResponse.getBody();
+				order.setOrderStatus("CONFIRMED");
 			} else {
 				order.setPaymentStatus("FAILED");
 				paymentsFailed.increment();
+				order.setOrderStatus("CANCELLED");
 			}
 			order.setPaymentStatus(payment.getStatus());
 			orderRepository.save(order);
+			
 			if (payment.getStatus().equalsIgnoreCase("SUCCESS")) {
 				this.releaseProduct(order, true);
 				// metric
@@ -190,7 +193,7 @@ public class OrderServiceImpl implements OrderService {
 			shipment.setOrderId(order.getOrderId());
 			shipment.setCarrier("DHL");// Assume DHL logistic service
 			shipment.setShippedAt(LocalDateTime.now());
-			shipment.setStatus("ORDER PLACED");
+			shipment.setStatus("SHIPPED");
 			shipment.setTrackingNo(generateTrackingNumber());
 
 			// shipmentClient.
@@ -230,13 +233,63 @@ public class OrderServiceImpl implements OrderService {
 		} catch (Exception e) {
 			log.error("Order creation failed", e);
 			this.releaseProduct(order, false);
-
+			
+			//if payment is success but any reason fails cancel payment
+			if(order.getPaymentStatus().equalsIgnoreCase("SUCCESS")) {
+				this.cancelOrder(order);
+			}
 			orderFailed.increment();
 
 			throw e;
 		}
 	}
 
+	@Transactional
+	@Override
+	public void cancelOrder(Order order) throws OrderException {
+		try {
+			String idempotencyKey = UUID.randomUUID().toString();
+			ResponseEntity<Payment> paymentResponse = paymentClient.refundPayment(order.getOrderId(), idempotencyKey);
+			if (paymentResponse.getStatusCode().is2xxSuccessful()) {
+				log.info(" Refund success successful!");
+				shipmentClient.updateShippingStatus(order.getOrderId(), "CANCELLED");
+				// response body
+				// Payment payment = (Payment) paymentResponse.getBody();
+				order.setOrderStatus("CANCELLED");
+				orderRepository.save(order);
+				this.releaseProduct(order, false);
+				
+				// Call API for Customer
+				Customer customer = null;
+				 //try {
+				 ResponseEntity<Customer> customerResponse = customerClient.getCustomerById(order.getCustomerId());
+//				}catch(Exception e) {
+//			 		log.error("Could not get Customer details");
+//			 	}
+				if (customerResponse.getStatusCode().is2xxSuccessful()) {
+					customer = (Customer) customerResponse.getBody();
+				} 
+				//Customer is available send email notification
+				if (customer != null && customer.getEmail() != null) {
+					try {
+						Notification notif = new Notification();
+						notif.setToEmail(customer.getEmail());
+						notif.setSubject("Order cancelled");
+						notif.setBody("Your order is cancelled. Refund is initiated if amount deducted.");
+						// Call API for Send notification
+						notificationClient.sendNotification(notif);
+					} catch (Exception e) {
+						log.error("Notification send failed");
+					}
+				} else {
+					log.warn("Customer not avialable");
+				}
+			}
+		} catch (Exception e) {
+			log.error("Cancel operation failed", e);
+		}
+
+	}
 	@Transactional
 	@Override
 	public void updateOrder(Order order) throws OrderException {
@@ -257,10 +310,12 @@ public class OrderServiceImpl implements OrderService {
 
 	@Transactional
 	@Override
-	public void deleteOrder(int productId) throws OrderException {
+	//Softdelete mark record delted
+	public void deleteOrder(int orderId) throws OrderException {
 		try {
-			orderRepository.deleteById(productId);
-			log.info("Order {} is deleted successfully", productId);
+			orderRepository.deleteByOrderId(orderId);
+			orderItemRepository.deleteByOrderId(orderId);
+			log.info("Order {} is deleted successfully", orderId);
 		} catch (Exception e) {
 			log.error("Order deletion failed");
 			throw e;
@@ -373,4 +428,5 @@ public class OrderServiceImpl implements OrderService {
 	 * log.info(" Get customer fallback triggered: " + ex.getMessage()); return
 	 * false; }
 	 */
+
 }

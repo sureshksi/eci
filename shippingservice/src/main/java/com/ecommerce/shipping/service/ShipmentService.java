@@ -51,7 +51,11 @@ public class ShipmentService {
     public void updateShipmentStatus(Integer shipmentId, String status) {
         shipmentRepository.updateStatus(status, shipmentId);
     }
-    
+
+    @Transactional
+    public void updateShipmentStatusByOrder(Integer orderId, String status) {
+        shipmentRepository.updateStatusByOrder(status, orderId);
+    }
     public Shipment getShipmentStausByTrackId(String trackId) {
         return shipmentRepository.getTrackStatus(trackId);
     }
