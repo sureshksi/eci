@@ -1,6 +1,7 @@
 package com.ecommerce.inventory.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -124,4 +125,9 @@ public class InventoryServiceImpl implements InventoryService {
         inventoryRepository.releaseExpiredReservations(cutoffTime);
         log.info("Release expired reservations ended");
     }
+
+	@Override
+	public List<Inventory> getAllProducts() {
+		return inventoryRepository.findAll();
+	}
 }

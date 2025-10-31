@@ -46,7 +46,7 @@ public class OrderController {
 	
 	//Create order with idempotency key support
 	@PostMapping
-	public ResponseEntity<Object> createOrder(@Valid @RequestBody Order order, 
+	public ResponseEntity<?> createOrder(@Valid @RequestBody Order order, 
 			@RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey, BindingResult bindingResult) {
 		log.info("Order createtion started");
 		if (bindingResult.hasErrors()) {
@@ -73,34 +73,34 @@ public class OrderController {
 			idemtepotenyRes.setResponseBody(pe.getMessage());
 			log.error("Failed to create Order");
 		}
-		return new ResponseEntity<Object>(idemtepotenyRes.getResponseBody(),  idemtepotenyRes.getResponseStatus());
+		return new ResponseEntity<>(idemtepotenyRes.getResponseBody(),  idemtepotenyRes.getResponseStatus());
 		
 	}
 
 	// This method gets the order details by orderid
 	@GetMapping("/{id}")
-	public ResponseEntity<Object> getOrderById(@Valid @PathVariable("id") Integer orderId) {
+	public ResponseEntity<?> getOrderById(@Valid @PathVariable("id") Integer orderId) {
 
 		try {
 			Order order = orderService.getOrderById(orderId);
-			return new ResponseEntity<Object>(order, HttpStatus.FOUND);
+			return new ResponseEntity<>(order, HttpStatus.FOUND);
 		}catch(OrderException oe) {
 			log.error("Failed to get order");
-			return new ResponseEntity<Object>(oe.getMessage(),  HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>(oe.getMessage(),  HttpStatus.NOT_FOUND);
 		}
 
 	}
 
 	// This method will delete the order from list
 	@DeleteMapping("/{id}")
-	public ResponseEntity<String> deleteOrderById(@Valid @PathVariable("id") Integer orderId) {
+	public ResponseEntity<?> deleteOrderById(@Valid @PathVariable("id") Integer orderId) {
 		try {
 		orderService.deleteOrder(orderId);
-		return new ResponseEntity<String>("Deleted Successfully", HttpStatus.OK);
+		return new ResponseEntity<>("Deleted Successfully", HttpStatus.OK);
 
 		}catch(OrderException pe) {
 			log.error("Failed to delete order");
-			return new ResponseEntity<String>(pe.getMessage(),  HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>(pe.getMessage(),  HttpStatus.NOT_FOUND);
 		}
 	}
 
@@ -114,22 +114,22 @@ public class OrderController {
 		try {
 			orderService.updateOrder(order);
 			log.info("Order updation ends");
-			return new ResponseEntity<Object>(order, HttpStatus.ACCEPTED);
+			return new ResponseEntity<>(order, HttpStatus.ACCEPTED);
 		}catch(OrderException pe) {
 			log.error("Failed to update order");
-			return new ResponseEntity<Object>(pe.getMessage(),  HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>(pe.getMessage(),  HttpStatus.NOT_FOUND);
 		}
 	}
 
 	//Get all orders
 	@GetMapping
-	public ResponseEntity<Object> getAllOrders() {
+	public ResponseEntity<?> getAllOrders() {
 		try {
 			List<Order> list = orderService.getAllOrders();
-			return new ResponseEntity<Object>(list, HttpStatus.OK);
+			return new ResponseEntity<>(list, HttpStatus.OK);
 		} catch (OrderException pe) {
 			log.error("Failed to get all orders");
-			return new ResponseEntity<Object>(pe.getMessage(), HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>(pe.getMessage(), HttpStatus.NOT_FOUND);
 		}
 	}
 }

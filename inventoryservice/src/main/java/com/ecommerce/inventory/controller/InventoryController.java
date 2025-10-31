@@ -1,6 +1,7 @@
 package com.ecommerce.inventory.controller;
 
 import java.util.HashMap;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -45,7 +46,7 @@ public class InventoryController {
 
 	//Update product details
 	@PutMapping
-	public ResponseEntity<Object> updateInventoryProduct(@Valid @RequestBody Inventory inventory, BindingResult bindingResult) {
+	public ResponseEntity<?> updateInventoryProduct(@Valid @RequestBody Inventory inventory, BindingResult bindingResult) {
 		log.info("Inventory updation starts");
 		if (bindingResult.hasErrors()) {
 			return ResponseEntity.badRequest().body("Validation failed");
@@ -53,54 +54,65 @@ public class InventoryController {
 		try {
 			inventoryService.updateInventory(inventory);
 			log.error("Failed to update Inventory");
-			return new ResponseEntity<Object>(inventory, HttpStatus.ACCEPTED);
+			return new ResponseEntity<>(inventory, HttpStatus.ACCEPTED);
 		} catch (InventoryException pe) {
 			log.error("Failed to update Inventory");
-			return new ResponseEntity<Object>(pe.getMessage(), HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>(pe.getMessage(), HttpStatus.NOT_FOUND);
 		}
 
 	}
-	
+	//Get All inventory list
+	@GetMapping
+	public ResponseEntity<?> getAllInventoryList() {
+		try {
+			List<Inventory> inventory = inventoryService.getAllProducts();
+		return new ResponseEntity<>(inventory, HttpStatus.OK);
+
+		}catch(Exception pe) {
+			log.error("Failed to get product details");
+			return new ResponseEntity<>(pe.getMessage(),  HttpStatus.NOT_FOUND);
+		}
+	}
 	//Get product inventory details
 	@GetMapping("/product/{productId}")
-	public ResponseEntity<Object> getInventoryProductById(@Valid @PathVariable Integer productId) {
+	public ResponseEntity<?> getInventoryProductById(@Valid @PathVariable Integer productId) {
 		try {
 			Inventory inventory = inventoryService.getProductById(productId);
-		return new ResponseEntity<Object>(inventory, HttpStatus.OK);
+		return new ResponseEntity<>(inventory, HttpStatus.OK);
 
 		}catch(InventoryException pe) {
 			log.error("Failed to get product details");
-			return new ResponseEntity<Object>(pe.getMessage(),  HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>(pe.getMessage(),  HttpStatus.NOT_FOUND);
 		}
 	}
 	
 	//Reserve product in inventory
 	@PutMapping("/product/reserve")
-	public ResponseEntity<Boolean> reserveProducct(@Valid @RequestParam int productId, @RequestParam int quantity) {
+	public ResponseEntity<?> reserveProducct(@Valid @RequestParam int productId, @RequestParam int quantity) {
 		try {
 			Boolean reserve = inventoryService.reserveByProduct(productId, quantity);
-		return new ResponseEntity<Boolean>(reserve, HttpStatus.OK);
+		return new ResponseEntity<>(reserve, HttpStatus.OK);
 		}catch(InventoryException pe) {
 			log.error("Failed to reserve product");
-			return new ResponseEntity<Boolean>(false,  HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>(false,  HttpStatus.NOT_FOUND);
 		}
 
 	}
 	//Release reserved product in inventory
 	@PutMapping("/product/release")
-	public ResponseEntity<Boolean> releaseProducct(@Valid @RequestParam int productId, @RequestParam boolean relaseType) {
+	public ResponseEntity<?> releaseProducct(@Valid @RequestParam int productId, @RequestParam boolean relaseType) {
 		try {
 		  Boolean release = inventoryService.releaseProducct(productId, relaseType);
-		return new ResponseEntity<Boolean>(release, HttpStatus.OK);
+		return new ResponseEntity<>(release, HttpStatus.OK);
 		}catch(InventoryException pe) {
 			log.error("Failed to release product reservation");
-			return new ResponseEntity<Boolean>(false,  HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>(false,  HttpStatus.NOT_FOUND);
 		}
 
 	}
 	//create inventory
 	@PostMapping
-	public ResponseEntity<Object> createInventoryProduct(@Valid @RequestBody Inventory inventory, @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey, BindingResult bindingResult) {
+	public ResponseEntity<?> createInventoryProduct(@Valid @RequestBody Inventory inventory, @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey, BindingResult bindingResult) {
 		log.info("Inventory createtion started");
 		if (bindingResult.hasErrors()) {
 			return ResponseEntity.badRequest().body("Validation failed");
@@ -128,27 +140,27 @@ public class InventoryController {
 			idemtepotenyRes.setResponseBody(pe.getMessage());
 			log.error("Failed to create Inventory");
 		}
-		return new ResponseEntity<Object>(idemtepotenyRes.getResponseBody(), idemtepotenyRes.getResponseStatus());
+		return new ResponseEntity<>(idemtepotenyRes.getResponseBody(), idemtepotenyRes.getResponseStatus());
 	
 	}
 	//Delete inventory
 	@DeleteMapping("/{id}")
-	public ResponseEntity<String> deleteOrderById(@Valid @PathVariable("id") Integer inventoryId) {
+	public ResponseEntity<?> deleteOrderById(@Valid @PathVariable("id") Integer inventoryId) {
 		try {
 			inventoryService.deleteInventory(inventoryId);
-		return new ResponseEntity<String>("Deleted Successfully", HttpStatus.OK);
+		return new ResponseEntity<>("Deleted Successfully", HttpStatus.OK);
 
 		}catch(InventoryException pe) {
 			log.error("Failed to delete inventory");
-			return new ResponseEntity<String>(pe.getMessage(),  HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>(pe.getMessage(),  HttpStatus.NOT_FOUND);
 		}
 	}
 	
     @GetMapping("/product/instock")
-    public ResponseEntity<Boolean> isInStock(@RequestParam int productId, @RequestParam int quantity) {
+    public ResponseEntity<?> isInStock(@RequestParam int productId, @RequestParam int quantity) {
     	
         boolean inStock = inventoryService.isInStock(productId, quantity);
-        return new ResponseEntity<Boolean>(inStock, HttpStatus.OK);
+        return new ResponseEntity<>(inStock, HttpStatus.OK);
     }
 
 }
