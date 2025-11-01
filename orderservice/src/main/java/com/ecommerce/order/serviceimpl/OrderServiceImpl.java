@@ -262,6 +262,7 @@ public class OrderServiceImpl implements OrderService {
 				// response body
 				// Payment payment = (Payment) paymentResponse.getBody();
 				order.setOrderStatus("CANCELLED");
+				order.setPaymentStatus("REFUND");
 				orderRepository.save(order);
 				this.releaseProduct(order, false);
 				
