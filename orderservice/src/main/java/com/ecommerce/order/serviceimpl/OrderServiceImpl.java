@@ -146,11 +146,11 @@ public class OrderServiceImpl implements OrderService {
 				});
 			}
 
-			// amount adding tax
-			totalPrice = totalPrice + (totalPrice * (5 / 100));
-
-			// amount adding shipping
-			totalPrice = totalPrice + (totalPrice * (10 / 100));
+			// amount adding 5%tax
+	        totalPrice *= 1.05;
+	        
+			// amount adding 10% shipping
+	        totalPrice *= 1.10;
 
 			// Rounding after decimal to two digit
 			totalPrice = Math.round(totalPrice * 100.0) / 100.0;
@@ -235,8 +235,9 @@ public class OrderServiceImpl implements OrderService {
 			this.releaseProduct(order, false);
 			
 			//if payment is success but any reason fails cancel payment
-			if(order.getPaymentStatus().equalsIgnoreCase("SUCCESS")) {
-				this.cancelOrder(order);
+			if(order.getPaymentStatus() !=null) {
+				if(order.getPaymentStatus().equalsIgnoreCase("SUCCESS"))
+					this.cancelOrder(order);
 			}
 			orderFailed.increment();
 
@@ -253,6 +254,11 @@ public class OrderServiceImpl implements OrderService {
 			if (paymentResponse.getStatusCode().is2xxSuccessful()) {
 				log.info(" Refund success successful!");
 				shipmentClient.updateShippingStatus(order.getOrderId(), "CANCELLED");
+				
+				for (OrderItem item : order.getItems()) {
+					inventoryClient.releaseCanceledProduct(item.getProductId(), item.getQuantity());					
+				}
+				
 				// response body
 				// Payment payment = (Payment) paymentResponse.getBody();
 				order.setOrderStatus("CANCELLED");

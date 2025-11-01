@@ -8,8 +8,12 @@ import org.springframework.web.service.annotation.PostExchange;
 
 import com.ecommerce.order.pojo.Shipment;
 
+/**Shipment Rest Client
+ * 
+ * @author Suresh Injeti
+ *
+ */
 public interface ShippmentClient {
-	//		        /api/v1/shipments/updateStatus/order?orderId=131&shippingStatus=Cancelled
 	@PatchExchange("/api/v1/shipments/updateStatus/order")
 	ResponseEntity<String> updateShippingStatus(@RequestParam Integer orderId, @RequestParam String shippingStatus);
 	

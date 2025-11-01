@@ -32,4 +32,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Integer> {
     @Query("UPDATE Inventory i SET i.onHand = i.onHand + i.reserved, i.reserved = 0  WHERE i.reserved > 0   AND i.updatedAt < :cutoff")
     void releaseExpiredReservations(@Param("cutoff") LocalDateTime cutoff);
 
+    @Modifying
+	@Query("UPDATE Inventory i SET i.updatedAt= :updatedAt, i.onHand= :onHand, i.reserved = :reserved WHERE i.productId = :productId")
+	void cancelByProductId(@Param("productId") Integer productId, @Param("onHand") Integer onHand, @Param("updatedAt") LocalDateTime updatedAt);
 }

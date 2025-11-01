@@ -56,6 +56,9 @@ public interface InventoryClient {
         log.error("Cannot get release for productId ", t);
         return false;
     }
+  	
+  	@PutExchange("/api/v1/inventory/product/release/cancel")
+	Boolean releaseCanceledProduct(@RequestParam(PRODUCT_ID) Integer productId, @RequestParam Integer quantity);
 
 }
 

@@ -110,6 +110,18 @@ public class InventoryController {
 		}
 
 	}
+	//Release reserved product in inventory
+	@PutMapping("/product/release/cancel")
+	public ResponseEntity<?> releaseCanceledProduct(@Valid @RequestParam int productId, @RequestParam int quantity) {
+		try {
+		  Boolean release = inventoryService.cancelReleaseProducct(productId, quantity);
+		return new ResponseEntity<>(release, HttpStatus.OK);
+		}catch(InventoryException pe) {
+			log.error("Failed to release product reservation");
+			return new ResponseEntity<>(false,  HttpStatus.NOT_FOUND);
+		}
+
+	}
 	//create inventory
 	@PostMapping
 	public ResponseEntity<?> createInventoryProduct(@Valid @RequestBody Inventory inventory, @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey, BindingResult bindingResult) {

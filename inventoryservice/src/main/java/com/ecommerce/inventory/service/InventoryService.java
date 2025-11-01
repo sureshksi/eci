@@ -20,5 +20,6 @@ public interface InventoryService {
 	public void deleteInventory(int inventoryId) throws InventoryException;
 	public boolean isInStock(int productId, int quantity);
 	public List<Inventory> getAllProducts();
+	public Boolean cancelReleaseProducct(int productId, int quantity) throws InventoryException;
 	
 }

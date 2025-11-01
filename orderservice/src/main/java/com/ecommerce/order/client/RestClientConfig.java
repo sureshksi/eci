@@ -11,7 +11,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
-/**Client beans are creates
+/**Client beans are creates using declarative spring boot functionality
  * 
  * @author Suresh Injeti
  *

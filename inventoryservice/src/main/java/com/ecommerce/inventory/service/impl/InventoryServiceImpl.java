@@ -130,4 +130,18 @@ public class InventoryServiceImpl implements InventoryService {
 	public List<Inventory> getAllProducts() {
 		return inventoryRepository.findAll();
 	}
+
+	@Transactional
+	@Override
+	public Boolean cancelReleaseProducct(int productId, int quantity) throws InventoryException {
+		Inventory inventory = this.getProductById(productId);
+		if(inventory!=null && inventory.getReserved()!=0) {
+			inventoryRepository.cancelByProductId(productId, (inventory.getOnHand()+quantity), LocalDateTime.now());
+			log.info("Product {} is released from reservation in Inventory successfully", productId);
+			return true;
+		}else {
+			log.info("Product already released in Inventory", productId);
+			return false;
+		}	
+	}
 }

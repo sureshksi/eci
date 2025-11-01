@@ -9,7 +9,11 @@ import org.springframework.web.service.annotation.PutExchange;
 
 import com.ecommerce.order.pojo.Payment;
 
-
+/**Payment Rest Client
+ * 
+ * @author Suresh Injeti
+ *
+ */
 public interface PaymentClient {
 
 	@PutExchange("/api/v1/payment/{orderId}/refund")

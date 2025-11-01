@@ -73,7 +73,7 @@ public class PaymentController {
 	    	try {
 	    		//UPI and COD do not add any charge
 	    		if(payment.getMethod().equalsIgnoreCase("CARD")) {
-	    			double toalAmount = payment.getAmount()+(payment.getAmount()*(2.5/100));
+	    			double toalAmount = payment.getAmount()+(payment.getAmount()*(2.50/100.0));
 		    		//Making rounding to two digits after decimal	
 	    			 toalAmount =	Math.round(toalAmount * 100.0) / 100.0;
 	    			 payment.setAmount(toalAmount);
