@@ -1,73 +1,112 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
-set -e  # Exit immediately if a command exits with a non-zero status
+echo "🚀 Starting microservices deployment..."
 
-echo "Step-1 ==== Building Docker images ===="
-docker build -t product-service:latest ./productservice
-docker build -t order-service:latest ./orderservice
-docker build -t inventory-service:latest ./inventoryservice
-docker build -t customer-service:latest ./customerservice
-docker build -t notification-service:latest ./notificationservice
-docker build -t shipment-service:latest ./shippingservice
-docker build -t payment-service:latest ./paymentservice
-docker build -t api-gateway:latest ./apigateway
+# -------------------------------
+# Step 0: Check and Start Minikube
+# -------------------------------
+if ! minikube status &>/dev/null; then
+  echo "➡️  Starting Minikube..."
+  minikube start
+else
+  echo "✅ Minikube is running."
+fi
 
-echo "Step-2 ==== Loading images into Minikube ===="
-minikube image load product-service:latest
-minikube image load order-service:latest
-minikube image load inventory-service:latest
-minikube image load customer-service:latest
-minikube image load payment-service:latest
-minikube image load shipment-service:latest
-minikube image load notification-service:latest
-minikube image load api-gateway:latest
+# Use Minikube's Docker daemon (optional but recommended)
+eval $(minikube docker-env)
 
-echo "Step-3 ==== Applying Kubernetes manifests ===="
-#kubectl delete namespace microservices
-echo "Step-3.1 ==== ConfigMap Namespace ===="
-# Step 3.1: Create namespace first
-kubectl create namespace microservices || echo "Namespace already exists"
+# -------------------------------
+# Step 1: Build Docker Images
+# -------------------------------
+echo "🧱 Step 1: Building Docker images..."
 
-echo "Step-3.2 ==== ConfigMap for service sql seedata ===="
-# Step 3.2: Create ConfigMaps
-kubectl create configmap product-db-init \
-  --from-file=init.sql=./productservice/mysql/init.sql \
-  -n microservices
+services=(
+  "product-service:productservice"
+  "order-service:orderservice"
+  "inventory-service:inventoryservice"
+  "customer-service:customerservice"
+  "notification-service:notificationservice"
+  "shipment-service:shippingservice"
+  "payment-service:paymentservice"
+  "api-gateway:apigateway"
+)
 
-kubectl create configmap order-db-init \
-  --from-file=init.sql=./orderservice/mysql/init.sql \
-  -n microservices
+for svc in "${services[@]}"; do
+  name="${svc%%:*}"
+  dir="${svc##*:}"
+  echo "➡️  Building $name"
+  docker build -t "$name:latest" "./$dir"
+done
 
-kubectl create configmap inventory-db-init \
-  --from-file=init.sql=./inventoryservice/mysql/init.sql \
-  -n microservices
+# -------------------------------
+# Step 2: Kubernetes Setup
+# -------------------------------
+NAMESPACE="microservices"
 
-kubectl create configmap customer-db-init \
-  --from-file=init.sql=./customerservice/mysql/init.sql \
-  -n microservices
+echo "➡️  Creating namespace if not exists..."
+kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
-kubectl create configmap payment-db-init \
-  --from-file=init.sql=./paymentservice/mysql/init.sql \
-  -n microservices
+# Step 2.1: Create ConfigMaps for SQL seed data
+echo "➡️  Creating ConfigMaps for DB init scripts..."
 
-kubectl create configmap shipment-db-init \
-  --from-file=init.sql=./shippingservice/mysql/init.sql \
-  -n microservices
-      
-  
-echo "Step-3.3 ==== Deploy k8smanifest file ===="
-# Step 3.3: Deploy all manifests
-kubectl apply -f k8s/product-service-manifests.yaml
-kubectl apply -f k8s/order-service-manifests.yaml
-kubectl apply -f k8s/inventory-service-manifests.yaml
-kubectl apply -f k8s/customer-service-manifests.yaml
-kubectl apply -f k8s/payment-service-manifests.yaml
-kubectl apply -f k8s/shipping-service-manifests.yaml
-kubectl apply -f k8s/notification-service-manifests.yaml
-kubectl apply -f k8s/api-gateway-manifests.yaml
+db_inits=(
+  "product-db-init:./productservice/mysql/init.sql"
+  "order-db-init:./orderservice/mysql/init.sql"
+  "inventory-db-init:./inventoryservice/mysql/init.sql"
+  "customer-db-init:./customerservice/mysql/init.sql"
+  "payment-db-init:./paymentservice/mysql/init.sql"
+  "shipment-db-init:./shippingservice/mysql/init.sql"
+)
 
-echo "==== Deployment complete! ===="
+for item in "${db_inits[@]}"; do
+  name="${item%%:*}"
+  file="${item##*:}"
+  if [ -f "$file" ]; then
+    echo "   ↳ $name"
+    kubectl delete configmap "$name" -n "$NAMESPACE" --ignore-not-found
+    kubectl create configmap "$name" --from-file=init.sql="$file" -n "$NAMESPACE"
+  else
+    echo "⚠️  Skipping $name — file not found: $file"
+  fi
+done
 
-kubectl get all -n microservices
-echo "==== Port forward Apigateway from cluster to access ===="
-kubectl port-forward service/api-gateway 8080:8080 -n microservices
+# -------------------------------
+# Step 3: Deploy Each Service with Delay
+# -------------------------------
+echo "🚀 Deploying microservices with 1-minute intervals..."
+
+deployments=(
+  "product-service:k8s/product-service-manifests.yaml"
+  "order-service:k8s/order-service-manifests.yaml"
+  "inventory-service:k8s/inventory-service-manifests.yaml"
+  "customer-service:k8s/customer-service-manifests.yaml"
+  "payment-service:k8s/payment-service-manifests.yaml"
+  "shipment-service:k8s/shipping-service-manifests.yaml"
+  "notification-service:k8s/notification-service-manifests.yaml"
+  "api-gateway:k8s/api-gateway-manifests.yaml"
+)
+
+for item in "${deployments[@]}"; do
+  svc="${item%%:*}"
+  file="${item##*:}"
+  echo "➡️  Applying manifests for $svc"
+  kubectl apply -n "$NAMESPACE" -f "$file"
+
+  echo "⏳ Waiting 1 minute to let $svc stabilize..."
+  sleep 60
+done
+
+# -------------------------------
+# Step 4: Post-Deployment Summary
+# -------------------------------
+echo "✅ All services deployed."
+kubectl get pods -n "$NAMESPACE"
+kubectl get svc -n "$NAMESPACE"
+
+# -------------------------------
+# Step 5: Port Forward API Gateway
+# -------------------------------
+echo "🌐 Access API Gateway at http://localhost:8080"
+echo "➡️  Use Ctrl+C to stop port-forwarding."
+kubectl port-forward service/api-gateway 8080:8080 -n "$NAMESPACE"
