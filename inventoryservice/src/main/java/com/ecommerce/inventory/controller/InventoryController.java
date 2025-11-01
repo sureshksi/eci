@@ -112,7 +112,7 @@ public class InventoryController {
 	}
 	//Release reserved product in inventory
 	@PutMapping("/product/release/cancel")
-	public ResponseEntity<?> releaseCanceledProduct(@Valid @RequestParam int productId, @RequestParam int quantity) {
+	public ResponseEntity<?> releaseCanceledProduct(@RequestParam int productId, @RequestParam int quantity) {
 		try {
 		  Boolean release = inventoryService.cancelReleaseProducct(productId, quantity);
 		return new ResponseEntity<>(release, HttpStatus.OK);
