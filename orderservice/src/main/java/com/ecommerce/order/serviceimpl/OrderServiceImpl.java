@@ -106,7 +106,7 @@ public class OrderServiceImpl implements OrderService {
 	public Order getOrderById(int orderId) throws OrderException {
 		Optional<Order> order = orderRepository.findById(orderId);
 		if (order.isEmpty())
-			throw new OrderException("Order matach found with '" + orderId + "' ");
+			throw new OrderException("Order matach not found with '" + orderId + "' ");
 		else
 			return order.get();
 	}

@@ -79,8 +79,8 @@ public class OrderController {
 	}
 
 	//Cancel order with idempotency key support
-		@PutMapping("/cancel")
-		public ResponseEntity<?> cancelOrder(@RequestBody Order order, 
+		@PutMapping("/{orderId}/cancel")
+		public ResponseEntity<?> cancelOrder(@Valid @PathVariable("orderId") Integer orderId, 
 				@RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
 			log.info("Order cancel started");
 			
@@ -95,7 +95,8 @@ public class OrderController {
 		        return new ResponseEntity<>(response.getResponseBody(), response.getResponseStatus());
 		    }
 		    IdempotencyResponse idemtepotenyRes = new IdempotencyResponse();
-			try {
+		    try {
+				Order order = orderService.getOrderById(orderId);
 				orderService.cancelOrder(order);
 				idemtepotenyRes.setResponseStatus(HttpStatus.CREATED);
 				idemtepotenyRes.setResponseBody(order.toString());
