@@ -1,5 +1,5 @@
 # Use OpenJDK image
-FROM openjdk:17-jdk-slim
+FROM openjdk:26-ea-17-jdk-slim
 
 # Install curl (and update package list first)
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
